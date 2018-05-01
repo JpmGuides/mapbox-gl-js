@@ -76,7 +76,8 @@ export const getJSON = function(requestParameters: RequestParameters, callback: 
         callback(new Error(xhr.statusText));
     };
     xhr.onload = function() {
-        if (xhr.status >= 200 && xhr.status < 300 && xhr.response) {
+        if ((xhr.status === undefined // support for file:// urls
+             || (xhr.status >= 200 && xhr.status < 300)) && xhr.response) {
             let data;
             try {
                 data = JSON.parse(xhr.response);
