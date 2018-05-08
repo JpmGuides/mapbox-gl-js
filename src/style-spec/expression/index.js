@@ -29,40 +29,23 @@ export type Feature = {
     +properties: {[string]: any}
 };
 
-export type GlobalProperties = {
+export type GlobalProperties = $ReadOnly<{
     zoom: number,
-    heatmapDensity?: number
-};
+    heatmapDensity?: number,
+    lineProgress?: number,
+    isSupportedScript?: (string) => boolean
+}>;
 
 export class StyleExpression {
     expression: Expression;
 
     _evaluator: EvaluationContext;
-
-    constructor(expression: Expression) {
-        this.expression = expression;
-    }
-
-    evaluate(globals: GlobalProperties, feature?: Feature): any {
-        if (!this._evaluator) {
-            this._evaluator = new EvaluationContext();
-        }
-
-        this._evaluator.globals = globals;
-        this._evaluator.feature = feature;
-        return this.expression.evaluate(this._evaluator);
-    }
-}
-
-export class StyleExpressionWithErrorHandling extends StyleExpression {
     _defaultValue: Value;
     _warningHistory: {[key: string]: boolean};
     _enumValues: {[string]: any};
 
-    _evaluator: EvaluationContext;
-
     constructor(expression: Expression, propertySpec: StylePropertySpecification) {
-        super(expression);
+        this.expression = expression;
         this._warningHistory = {};
         this._defaultValue = getDefaultValue(propertySpec);
         if (propertySpec.type === 'enum') {
@@ -70,7 +53,18 @@ export class StyleExpressionWithErrorHandling extends StyleExpression {
         }
     }
 
-    evaluate(globals: GlobalProperties, feature?: Feature) {
+    evaluateWithoutErrorHandling(globals: GlobalProperties, feature?: Feature): any {
+        if (!this._evaluator) {
+            this._evaluator = new EvaluationContext();
+        }
+
+        this._evaluator.globals = globals;
+        this._evaluator.feature = feature;
+
+        return this.expression.evaluate(this._evaluator);
+    }
+
+    evaluate(globals: GlobalProperties, feature?: Feature): any {
         if (!this._evaluator) {
             this._evaluator = new EvaluationContext();
         }
@@ -113,9 +107,7 @@ export function isExpression(expression: mixed) {
  *
  * @private
  */
-export function createExpression(expression: mixed,
-                          propertySpec: StylePropertySpecification,
-                          options: {handleErrors?: boolean} = {}): Result<StyleExpression, Array<ParsingError>> {
+export function createExpression(expression: mixed, propertySpec: StylePropertySpecification): Result<StyleExpression, Array<ParsingError>> {
     const parser = new ParsingContext(definitions, [], getExpectedType(propertySpec));
     const parsed = parser.parse(expression);
     if (!parsed) {
@@ -123,20 +115,22 @@ export function createExpression(expression: mixed,
         return error(parser.errors);
     }
 
-    if (options.handleErrors === false) {
-        return success(new StyleExpression(parsed));
-    } else {
-        return success(new StyleExpressionWithErrorHandling(parsed, propertySpec));
-    }
+    return success(new StyleExpression(parsed, propertySpec));
 }
 
 export class ZoomConstantExpression<Kind> {
     kind: Kind;
     _styleExpression: StyleExpression;
+
     constructor(kind: Kind, expression: StyleExpression) {
         this.kind = kind;
         this._styleExpression = expression;
     }
+
+    evaluateWithoutErrorHandling(globals: GlobalProperties, feature?: Feature): any {
+        return this._styleExpression.evaluateWithoutErrorHandling(globals, feature);
+    }
+
     evaluate(globals: GlobalProperties, feature?: Feature): any {
         return this._styleExpression.evaluate(globals, feature);
     }
@@ -156,6 +150,10 @@ export class ZoomDependentExpression<Kind> {
         if (zoomCurve instanceof Interpolate) {
             this._interpolationType = zoomCurve.interpolation;
         }
+    }
+
+    evaluateWithoutErrorHandling(globals: GlobalProperties, feature?: Feature): any {
+        return this._styleExpression.evaluateWithoutErrorHandling(globals, feature);
     }
 
     evaluate(globals: GlobalProperties, feature?: Feature): any {
@@ -201,10 +199,8 @@ export type StylePropertyExpression =
     | CameraExpression
     | CompositeExpression;
 
-export function createPropertyExpression(expression: mixed,
-                                  propertySpec: StylePropertySpecification,
-                                  options: {handleErrors?: boolean} = {}): Result<StylePropertyExpression, Array<ParsingError>> {
-    expression = createExpression(expression, propertySpec, options);
+export function createPropertyExpression(expression: mixed, propertySpec: StylePropertySpecification): Result<StylePropertyExpression, Array<ParsingError>> {
+    expression = createExpression(expression, propertySpec);
     if (expression.result === 'error') {
         return expression;
     }

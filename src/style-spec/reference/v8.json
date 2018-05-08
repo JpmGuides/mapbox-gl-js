@@ -111,8 +111,7 @@
     "source_raster_dem",
     "source_geojson",
     "source_video",
-    "source_image",
-    "source_canvas"
+    "source_image"
   ],
   "source_vector": {
     "type": {
@@ -336,6 +335,11 @@
     "clusterMaxZoom": {
       "type": "number",
       "doc": "Max zoom on which to cluster points if clustering is enabled. Defaults to one zoom less than maxzoom (so that last zoom features are not clustered)."
+    },
+    "lineMetrics": {
+      "type": "boolean",
+      "default": false,
+      "doc": "Whether to calculate line distance metrics. This is required for line layers that specify `line-gradient` values."
     }
   },
   "source_video": {
@@ -397,40 +401,6 @@
       }
     }
   },
-  "source_canvas": {
-    "type": {
-      "required": true,
-      "type": "enum",
-      "values": {
-        "canvas": {
-          "doc": "A canvas data source."
-        }
-      },
-      "doc": "The data type of the canvas source."
-    },
-    "coordinates": {
-      "required": true,
-      "doc": "Corners of canvas specified in longitude, latitude pairs.",
-      "type": "array",
-      "length": 4,
-      "value": {
-        "type": "array",
-        "length": 2,
-        "value": "number",
-        "doc": "A single longitude, latitude pair."
-      }
-    },
-    "animate": {
-      "type": "boolean",
-      "default": "true",
-      "doc": "Whether the canvas source is animated. If the canvas is static, `animate` should be set to `false` to improve performance."
-    },
-    "canvas": {
-      "type": "string",
-      "required": true,
-      "doc": "HTML ID of the canvas from which to read pixels."
-    }
-  },
   "layer": {
     "id": {
       "type": "string",
@@ -488,7 +458,10 @@
           "doc": "A heatmap.",
           "sdk-support": {
             "basic functionality": {
-              "js": "0.41.0"
+              "js": "0.41.0",
+              "android": "6.0.0",
+              "ios": "4.0.0",
+              "macos": "0.7.0"
             }
           }
         },
@@ -518,7 +491,10 @@
           "doc": "Client-side hillshading visualization based on DEM data. Currently, the implementation only supports Mapbox Terrain RGB and Mapzen Terrarium tiles.",
           "sdk-support": {
             "basic functionality": {
-              "js": "0.43.0"
+              "js": "0.43.0",
+              "android": "6.0.0",
+              "ios": "4.0.0",
+              "macos": "0.7.0"
             }
           }
         },
@@ -701,7 +677,10 @@
       "doc": "Whether this layer is displayed.",
       "sdk-support": {
         "basic functionality": {
-          "js": "0.41.0"
+          "js": "0.41.0",
+          "android": "6.0.0",
+          "ios": "4.0.0",
+          "macos": "0.7.0"
         }
       }
     }
@@ -1114,7 +1093,7 @@
       "function": "piecewise-constant",
       "zoom-function": true,
       "property-function": true,
-      "doc": "Name of image in sprite to use for drawing an image background. Within literal values and zoom functions, property names enclosed in curly brackets (e.g. `{token}`) are replaced with the value of the named property. Expressions and property functions do not support this syntax; for equivalent functionality in expressions, use the [`concat`](#expressions-concat) and [`get`](#expressions-get) operators.",
+      "doc": "Name of image in sprite to use for drawing an image background.",
       "tokens": true,
       "sdk-support": {
         "basic functionality": {
@@ -1397,7 +1376,7 @@
       "property-function": true,
       "default": "",
       "tokens": true,
-      "doc": "Value to use for a text label. Within literal values and zoom functions, property names enclosed in curly brackets (e.g. `{token}`) are replaced with the value of the named property. Expressions and property functions do not support this syntax; for equivalent functionality in expressions, use the [`concat`](#expressions-concat) and [`get`](#expressions-get) operators.",
+      "doc": "Value to use for a text label.",
       "sdk-support": {
         "basic functionality": {
           "js": "0.10.0",
@@ -1432,7 +1411,10 @@
           "macos": "0.1.0"
         },
         "data-driven styling": {
-          "js": "0.43.0"
+          "js": "0.43.0",
+          "android": "6.0.0",
+          "ios": "4.0.0",
+          "macos": "0.7.0"
         }
       }
     },
@@ -1909,7 +1891,10 @@
       "doc": "Whether this layer is displayed.",
       "sdk-support": {
         "basic functionality": {
-          "js": "0.43.0"
+          "js": "0.43.0",
+          "android": "6.0.0",
+          "ios": "4.0.0",
+          "macos": "0.7.0"
         },
         "data-driven styling": {}
       }
@@ -2068,7 +2053,10 @@
         "group": "Variable binding",
         "sdk-support": {
           "basic functionality": {
-            "js": "0.41.0"
+            "js": "0.41.0",
+            "android": "6.0.0",
+            "ios": "4.0.0",
+            "macos": "0.7.0"
           }
         }
       },
@@ -2077,7 +2065,10 @@
         "group": "Variable binding",
         "sdk-support": {
           "basic functionality": {
-            "js": "0.41.0"
+            "js": "0.41.0",
+            "android": "6.0.0",
+            "ios": "4.0.0",
+            "macos": "0.7.0"
           }
         }
       },
@@ -2086,7 +2077,10 @@
         "group": "Types",
         "sdk-support": {
           "basic functionality": {
-            "js": "0.41.0"
+            "js": "0.41.0",
+            "android": "6.0.0",
+            "ios": "4.0.0",
+            "macos": "0.7.0"
           }
         }
       },
@@ -2095,7 +2089,10 @@
         "group": "Types",
         "sdk-support": {
           "basic functionality": {
-            "js": "0.41.0"
+            "js": "0.41.0",
+            "android": "6.0.0",
+            "ios": "4.0.0",
+            "macos": "0.7.0"
           }
         }
       },
@@ -2104,7 +2101,10 @@
         "group": "Lookup",
         "sdk-support": {
           "basic functionality": {
-            "js": "0.41.0"
+            "js": "0.41.0",
+            "android": "6.0.0",
+            "ios": "4.0.0",
+            "macos": "0.7.0"
           }
         }
       },
@@ -2113,7 +2113,10 @@
         "group": "Decision",
         "sdk-support": {
           "basic functionality": {
-            "js": "0.41.0"
+            "js": "0.41.0",
+            "android": "6.0.0",
+            "ios": "4.0.0",
+            "macos": "0.7.0"
           }
         }
       },
@@ -2122,7 +2125,10 @@
         "group": "Decision",
         "sdk-support": {
           "basic functionality": {
-            "js": "0.41.0"
+            "js": "0.41.0",
+            "android": "6.0.0",
+            "ios": "4.0.0",
+            "macos": "0.7.0"
           }
         }
       },
@@ -2131,7 +2137,10 @@
         "group": "Decision",
         "sdk-support": {
           "basic functionality": {
-            "js": "0.41.0"
+            "js": "0.41.0",
+            "android": "6.0.0",
+            "ios": "4.0.0",
+            "macos": "0.7.0"
           }
         }
       },
@@ -2140,7 +2149,10 @@
         "group": "Ramps, scales, curves",
         "sdk-support": {
           "basic functionality": {
-            "js": "0.42.0"
+            "js": "0.42.0",
+            "android": "6.0.0",
+            "ios": "4.0.0",
+            "macos": "0.7.0"
           }
         }
       },
@@ -2149,7 +2161,10 @@
         "group": "Ramps, scales, curves",
         "sdk-support": {
           "basic functionality": {
-            "js": "0.42.0"
+            "js": "0.42.0",
+            "android": "6.0.0",
+            "ios": "4.0.0",
+            "macos": "0.7.0"
           }
         }
       },
@@ -2158,7 +2173,10 @@
         "group": "Math",
         "sdk-support": {
           "basic functionality": {
-            "js": "0.41.0"
+            "js": "0.41.0",
+            "android": "6.0.0",
+            "ios": "4.0.0",
+            "macos": "0.7.0"
           }
         }
       },
@@ -2167,7 +2185,10 @@
         "group": "Math",
         "sdk-support": {
           "basic functionality": {
-            "js": "0.41.0"
+            "js": "0.41.0",
+            "android": "6.0.0",
+            "ios": "4.0.0",
+            "macos": "0.7.0"
           }
         }
       },
@@ -2176,7 +2197,10 @@
         "group": "Math",
         "sdk-support": {
           "basic functionality": {
-            "js": "0.41.0"
+            "js": "0.41.0",
+            "android": "6.0.0",
+            "ios": "4.0.0",
+            "macos": "0.7.0"
           }
         }
       },
@@ -2185,52 +2209,79 @@
         "group": "Types",
         "sdk-support": {
           "basic functionality": {
-            "js": "0.41.0"
+            "js": "0.41.0",
+            "android": "6.0.0",
+            "ios": "4.0.0",
+            "macos": "0.7.0"
           }
         }
       },
       "string": {
-        "doc": "Asserts that the input value is a string. If multiple values are provided, each one is evaluated in order until a string value is obtained. If none of the inputs are strings, the expression is an error.",
+        "doc": "Asserts that the input value is a string. If multiple values are provided, each one is evaluated in order until a string is obtained. If none of the inputs are strings, the expression is an error.",
         "group": "Types",
         "sdk-support": {
           "basic functionality": {
-            "js": "0.41.0"
+            "js": "0.41.0",
+            "android": "6.0.0",
+            "ios": "4.0.0",
+            "macos": "0.7.0"
           }
         }
       },
       "number": {
-        "doc": "Asserts that the input value is a number. If multiple values are provided, each one is evaluated in order until a number value is obtained. If none of the inputs are numbers, the expression is an error.",
+        "doc": "Asserts that the input value is a number. If multiple values are provided, each one is evaluated in order until a number is obtained. If none of the inputs are numbers, the expression is an error.",
         "group": "Types",
         "sdk-support": {
           "basic functionality": {
-            "js": "0.41.0"
+            "js": "0.41.0",
+            "android": "6.0.0",
+            "ios": "4.0.0",
+            "macos": "0.7.0"
           }
         }
       },
       "boolean": {
-        "doc": "Asserts that the input value is a boolean. If multiple values are provided, each one is evaluated in order until a boolean value is obtained. If none of the inputs are booleans, the expression is an error.",
+        "doc": "Asserts that the input value is a boolean. If multiple values are provided, each one is evaluated in order until a boolean is obtained. If none of the inputs are booleans, the expression is an error.",
         "group": "Types",
         "sdk-support": {
           "basic functionality": {
-            "js": "0.41.0"
+            "js": "0.41.0",
+            "android": "6.0.0",
+            "ios": "4.0.0",
+            "macos": "0.7.0"
           }
         }
       },
       "object": {
-        "doc": "Asserts that the input value is an object. If it is not, the expression is an error.",
+        "doc": "Asserts that the input value is an object. If multiple values are provided, each one is evaluated in order until an object is obtained. If none of the inputs are objects, the expression is an error.",
         "group": "Types",
         "sdk-support": {
           "basic functionality": {
-            "js": "0.41.0"
+            "js": "0.41.0",
+            "android": "6.0.0",
+            "ios": "4.0.0",
+            "macos": "0.7.0"
+          }
+        }
+      },
+      "collator": {
+        "doc": "Returns a `collator` for use in locale-dependent comparison operations. The `case-sensitive` and `diacritic-sensitive` options default to `false`. The `locale` argument specifies the IETF language tag of the locale to use. If none is provided, the default locale is used. If the requested locale is not available, the `collator` will use a system-defined fallback locale. Use `resolved-locale` to test the results of locale fallback behavior.",
+        "group": "Types",
+        "sdk-support": {
+          "basic functionality": {
+            "js": "0.45.0"
           }
         }
       },
       "to-string": {
-        "doc": "Converts the input value to a string. If the input is `null`, the result is `\"null\"`. If the input is a boolean, the result is `\"true\"` or `\"false\"`. If the input is a number, it is converted to a string as specified by the [\"NumberToString\" algorithm](https://tc39.github.io/ecma262/#sec-tostring-applied-to-the-number-type) of the ECMAScript Language Specification. If the input is a color, it is converted to a string of the form `\"rgba(r,g,b,a)\"`, where `r`, `g`, and `b` are numerals ranging from 0 to 255, and `a` ranges from 0 to 1. Otherwise, the input is converted to a string in the format specified by the [`JSON.stringify`](https://tc39.github.io/ecma262/#sec-json.stringify) function of the ECMAScript Language Specification.",
+        "doc": "Converts the input value to a string. If the input is `null`, the result is `\"\"`. If the input is a boolean, the result is `\"true\"` or `\"false\"`. If the input is a number, it is converted to a string as specified by the [\"NumberToString\" algorithm](https://tc39.github.io/ecma262/#sec-tostring-applied-to-the-number-type) of the ECMAScript Language Specification. If the input is a color, it is converted to a string of the form `\"rgba(r,g,b,a)\"`, where `r`, `g`, and `b` are numerals ranging from 0 to 255, and `a` ranges from 0 to 1. Otherwise, the input is converted to a string in the format specified by the [`JSON.stringify`](https://tc39.github.io/ecma262/#sec-json.stringify) function of the ECMAScript Language Specification.",
         "group": "Types",
         "sdk-support": {
           "basic functionality": {
-            "js": "0.41.0"
+            "js": "0.41.0",
+            "android": "6.0.0",
+            "ios": "4.0.0",
+            "macos": "0.7.0"
           }
         }
       },
@@ -2239,7 +2290,10 @@
         "group": "Types",
         "sdk-support": {
           "basic functionality": {
-            "js": "0.41.0"
+            "js": "0.41.0",
+            "android": "6.0.0",
+            "ios": "4.0.0",
+            "macos": "0.7.0"
           }
         }
       },
@@ -2248,7 +2302,10 @@
         "group": "Types",
         "sdk-support": {
           "basic functionality": {
-            "js": "0.41.0"
+            "js": "0.41.0",
+            "android": "6.0.0",
+            "ios": "4.0.0",
+            "macos": "0.7.0"
           }
         }
       },
@@ -2257,7 +2314,10 @@
         "group": "Color",
         "sdk-support": {
           "basic functionality": {
-            "js": "0.41.0"
+            "js": "0.41.0",
+            "android": "6.0.0",
+            "ios": "4.0.0",
+            "macos": "0.7.0"
           }
         }
       },
@@ -2266,7 +2326,10 @@
         "group": "Types",
         "sdk-support": {
           "basic functionality": {
-            "js": "0.41.0"
+            "js": "0.41.0",
+            "android": "6.0.0",
+            "ios": "4.0.0",
+            "macos": "0.7.0"
           }
         }
       },
@@ -2275,7 +2338,10 @@
         "group": "Color",
         "sdk-support": {
           "basic functionality": {
-            "js": "0.41.0"
+            "js": "0.41.0",
+            "android": "6.0.0",
+            "ios": "4.0.0",
+            "macos": "0.7.0"
           }
         }
       },
@@ -2284,7 +2350,10 @@
         "group": "Color",
         "sdk-support": {
           "basic functionality": {
-            "js": "0.41.0"
+            "js": "0.41.0",
+            "android": "6.0.0",
+            "ios": "4.0.0",
+            "macos": "0.7.0"
           }
         }
       },
@@ -2293,7 +2362,10 @@
         "group": "Lookup",
         "sdk-support": {
           "basic functionality": {
-            "js": "0.41.0"
+            "js": "0.41.0",
+            "android": "6.0.0",
+            "ios": "4.0.0",
+            "macos": "0.7.0"
           }
         }
       },
@@ -2302,7 +2374,10 @@
         "group": "Lookup",
         "sdk-support": {
           "basic functionality": {
-            "js": "0.41.0"
+            "js": "0.41.0",
+            "android": "6.0.0",
+            "ios": "4.0.0",
+            "macos": "0.7.0"
           }
         }
       },
@@ -2311,7 +2386,10 @@
         "group": "Lookup",
         "sdk-support": {
           "basic functionality": {
-            "js": "0.41.0"
+            "js": "0.41.0",
+            "android": "6.0.0",
+            "ios": "4.0.0",
+            "macos": "0.7.0"
           }
         }
       },
@@ -2320,7 +2398,10 @@
         "group": "Feature data",
         "sdk-support": {
           "basic functionality": {
-            "js": "0.41.0"
+            "js": "0.41.0",
+            "android": "6.0.0",
+            "ios": "4.0.0",
+            "macos": "0.7.0"
           }
         }
       },
@@ -2329,7 +2410,10 @@
         "group": "Feature data",
         "sdk-support": {
           "basic functionality": {
-            "js": "0.41.0"
+            "js": "0.41.0",
+            "android": "6.0.0",
+            "ios": "4.0.0",
+            "macos": "0.7.0"
           }
         }
       },
@@ -2338,7 +2422,10 @@
         "group": "Feature data",
         "sdk-support": {
           "basic functionality": {
-            "js": "0.41.0"
+            "js": "0.41.0",
+            "android": "6.0.0",
+            "ios": "4.0.0",
+            "macos": "0.7.0"
           }
         }
       },
@@ -2347,7 +2434,10 @@
         "group": "Zoom",
         "sdk-support": {
           "basic functionality": {
-            "js": "0.41.0"
+            "js": "0.41.0",
+            "android": "6.0.0",
+            "ios": "4.0.0",
+            "macos": "0.7.0"
           }
         }
       },
@@ -2356,16 +2446,26 @@
         "group": "Heatmap",
         "sdk-support": {
           "basic functionality": {
-            "js": "0.41.0"
+            "js": "0.41.0",
+            "android": "6.0.0",
+            "ios": "4.0.0",
+            "macos": "0.7.0"
           }
         }
+      },
+      "line-progress": {
+        "doc": "Gets the progress along a gradient line. Can only be used in the `line-gradient` property.",
+        "group": "Heatmap"
       },
       "+": {
         "doc": "Returns the sum of the inputs.",
         "group": "Math",
         "sdk-support": {
           "basic functionality": {
-            "js": "0.41.0"
+            "js": "0.41.0",
+            "android": "6.0.0",
+            "ios": "4.0.0",
+            "macos": "0.7.0"
           }
         }
       },
@@ -2374,7 +2474,10 @@
         "group": "Math",
         "sdk-support": {
           "basic functionality": {
-            "js": "0.41.0"
+            "js": "0.41.0",
+            "android": "6.0.0",
+            "ios": "4.0.0",
+            "macos": "0.7.0"
           }
         }
       },
@@ -2383,7 +2486,10 @@
         "group": "Math",
         "sdk-support": {
           "basic functionality": {
-            "js": "0.41.0"
+            "js": "0.41.0",
+            "android": "6.0.0",
+            "ios": "4.0.0",
+            "macos": "0.7.0"
           }
         }
       },
@@ -2392,7 +2498,10 @@
         "group": "Math",
         "sdk-support": {
           "basic functionality": {
-            "js": "0.41.0"
+            "js": "0.41.0",
+            "android": "6.0.0",
+            "ios": "4.0.0",
+            "macos": "0.7.0"
           }
         }
       },
@@ -2401,7 +2510,10 @@
         "group": "Math",
         "sdk-support": {
           "basic functionality": {
-            "js": "0.41.0"
+            "js": "0.41.0",
+            "android": "6.0.0",
+            "ios": "4.0.0",
+            "macos": "0.7.0"
           }
         }
       },
@@ -2410,7 +2522,10 @@
         "group": "Math",
         "sdk-support": {
           "basic functionality": {
-            "js": "0.41.0"
+            "js": "0.41.0",
+            "android": "6.0.0",
+            "ios": "4.0.0",
+            "macos": "0.7.0"
           }
         }
       },
@@ -2419,7 +2534,10 @@
         "group": "Math",
         "sdk-support": {
           "basic functionality": {
-            "js": "0.42.0"
+            "js": "0.42.0",
+            "android": "6.0.0",
+            "ios": "4.0.0",
+            "macos": "0.7.0"
           }
         }
       },
@@ -2428,7 +2546,10 @@
         "group": "Math",
         "sdk-support": {
           "basic functionality": {
-            "js": "0.41.0"
+            "js": "0.41.0",
+            "android": "6.0.0",
+            "ios": "4.0.0",
+            "macos": "0.7.0"
           }
         }
       },
@@ -2437,7 +2558,10 @@
         "group": "Math",
         "sdk-support": {
           "basic functionality": {
-            "js": "0.41.0"
+            "js": "0.41.0",
+            "android": "6.0.0",
+            "ios": "4.0.0",
+            "macos": "0.7.0"
           }
         }
       },
@@ -2446,7 +2570,10 @@
         "group": "Math",
         "sdk-support": {
           "basic functionality": {
-            "js": "0.41.0"
+            "js": "0.41.0",
+            "android": "6.0.0",
+            "ios": "4.0.0",
+            "macos": "0.7.0"
           }
         }
       },
@@ -2455,7 +2582,10 @@
         "group": "Math",
         "sdk-support": {
           "basic functionality": {
-            "js": "0.41.0"
+            "js": "0.41.0",
+            "android": "6.0.0",
+            "ios": "4.0.0",
+            "macos": "0.7.0"
           }
         }
       },
@@ -2464,7 +2594,10 @@
         "group": "Math",
         "sdk-support": {
           "basic functionality": {
-            "js": "0.41.0"
+            "js": "0.41.0",
+            "android": "6.0.0",
+            "ios": "4.0.0",
+            "macos": "0.7.0"
           }
         }
       },
@@ -2473,7 +2606,10 @@
         "group": "Math",
         "sdk-support": {
           "basic functionality": {
-            "js": "0.41.0"
+            "js": "0.41.0",
+            "android": "6.0.0",
+            "ios": "4.0.0",
+            "macos": "0.7.0"
           }
         }
       },
@@ -2482,7 +2618,10 @@
         "group": "Math",
         "sdk-support": {
           "basic functionality": {
-            "js": "0.41.0"
+            "js": "0.41.0",
+            "android": "6.0.0",
+            "ios": "4.0.0",
+            "macos": "0.7.0"
           }
         }
       },
@@ -2491,7 +2630,10 @@
         "group": "Math",
         "sdk-support": {
           "basic functionality": {
-            "js": "0.41.0"
+            "js": "0.41.0",
+            "android": "6.0.0",
+            "ios": "4.0.0",
+            "macos": "0.7.0"
           }
         }
       },
@@ -2500,7 +2642,10 @@
         "group": "Math",
         "sdk-support": {
           "basic functionality": {
-            "js": "0.41.0"
+            "js": "0.41.0",
+            "android": "6.0.0",
+            "ios": "4.0.0",
+            "macos": "0.7.0"
           }
         }
       },
@@ -2509,7 +2654,10 @@
         "group": "Math",
         "sdk-support": {
           "basic functionality": {
-            "js": "0.41.0"
+            "js": "0.41.0",
+            "android": "6.0.0",
+            "ios": "4.0.0",
+            "macos": "0.7.0"
           }
         }
       },
@@ -2518,61 +2666,130 @@
         "group": "Math",
         "sdk-support": {
           "basic functionality": {
-            "js": "0.41.0"
+            "js": "0.41.0",
+            "android": "6.0.0",
+            "ios": "4.0.0",
+            "macos": "0.7.0"
+          }
+        }
+      },
+      "round": {
+        "doc": "Rounds the input to the nearest integer. Halfway values are rounded away from zero. For example, `[\"round\", -1.5]` evaluates to -2.",
+        "group": "Math",
+        "sdk-support": {
+          "basic functionality": {
+            "js": "0.45.0",
+            "android": "6.0.0",
+            "ios": "4.0.0",
+            "macos": "0.7.0"
+          }
+        }
+      },
+      "abs": {
+        "doc": "Returns the absolute value of the input.",
+        "group": "Math",
+        "sdk-support": {
+          "basic functionality": {
+            "js": "0.45.0",
+            "android": "6.0.0",
+            "ios": "4.0.0",
+            "macos": "0.7.0"
+          }
+        }
+      },
+      "ceil": {
+        "doc": "Returns the smallest integer that is greater than or equal to the input.",
+        "group": "Math",
+        "sdk-support": {
+          "basic functionality": {
+            "js": "0.45.0",
+            "android": "6.0.0",
+            "ios": "4.0.0",
+            "macos": "0.7.0"
+          }
+        }
+      },
+      "floor": {
+        "doc": "Returns the largest integer that is less than or equal to the input.",
+        "group": "Math",
+        "sdk-support": {
+          "basic functionality": {
+            "js": "0.45.0",
+            "android": "6.0.0",
+            "ios": "4.0.0",
+            "macos": "0.7.0"
           }
         }
       },
       "==": {
-        "doc": "Returns `true` if the input values are equal, `false` otherwise. Equality is strictly typed: values of different types are always considered not equal.",
+        "doc": "Returns `true` if the input values are equal, `false` otherwise. Equality is strictly typed: values of different types are always considered not equal. Accepts an optional `collator` argument to control locale-dependent string comparisons.",
         "group": "Decision",
         "sdk-support": {
           "basic functionality": {
-            "js": "0.41.0"
+            "js": "0.41.0",
+            "android": "6.0.0",
+            "ios": "4.0.0",
+            "macos": "0.7.0"
           }
         }
       },
       "!=": {
-        "doc": "Returns `true` if the input values are not equal, `false` otherwise. Equality is strictly typed: values of different types are always considered not equal.",
+        "doc": "Returns `true` if the input values are not equal, `false` otherwise. Equality is strictly typed: values of different types are always considered not equal. Accepts an optional `collator` argument to control locale-dependent string comparisons.",
         "group": "Decision",
         "sdk-support": {
           "basic functionality": {
-            "js": "0.41.0"
+            "js": "0.41.0",
+            "android": "6.0.0",
+            "ios": "4.0.0",
+            "macos": "0.7.0"
           }
         }
       },
       ">": {
-        "doc": "Returns `true` if the first input is strictly greater than the second, `false` otherwise. The inputs must be numbers or strings, and both of the same type.",
+        "doc": "Returns `true` if the first input is strictly greater than the second, `false` otherwise. The inputs must be numbers or strings, and both of the same type. Accepts an optional `collator` argument to control locale-dependent string comparisons.",
         "group": "Decision",
         "sdk-support": {
           "basic functionality": {
-            "js": "0.41.0"
+            "js": "0.41.0",
+            "android": "6.0.0",
+            "ios": "4.0.0",
+            "macos": "0.7.0"
           }
         }
       },
       "<": {
-        "doc": "Returns `true` if the first input is strictly less than the second, `false` otherwise. The inputs must be numbers or strings, and both of the same type.",
+        "doc": "Returns `true` if the first input is strictly less than the second, `false` otherwise. The inputs must be numbers or strings, and both of the same type. Accepts an optional `collator` argument to control locale-dependent string comparisons.",
         "group": "Decision",
         "sdk-support": {
           "basic functionality": {
-            "js": "0.41.0"
+            "js": "0.41.0",
+            "android": "6.0.0",
+            "ios": "4.0.0",
+            "macos": "0.7.0"
           }
         }
       },
       ">=": {
-        "doc": "Returns `true` if the first input is greater than or equal to the second, `false` otherwise. The inputs must be numbers or strings, and both of the same type.",
+        "doc": "Returns `true` if the first input is greater than or equal to the second, `false` otherwise. The inputs must be numbers or strings, and both of the same type. Accepts an optional `collator` argument to control locale-dependent string comparisons.",
         "group": "Decision",
         "sdk-support": {
           "basic functionality": {
-            "js": "0.41.0"
+            "js": "0.41.0",
+            "android": "6.0.0",
+            "ios": "4.0.0",
+            "macos": "0.7.0"
           }
         }
       },
       "<=": {
-        "doc": "Returns `true` if the first input is less than or equal to the second, `false` otherwise. The inputs must be numbers or strings, and both of the same type.",
+        "doc": "Returns `true` if the first input is less than or equal to the second, `false` otherwise. The inputs must be numbers or strings, and both of the same type. Accepts an optional `collator` argument to control locale-dependent string comparisons.",
         "group": "Decision",
         "sdk-support": {
           "basic functionality": {
-            "js": "0.41.0"
+            "js": "0.41.0",
+            "android": "6.0.0",
+            "ios": "4.0.0",
+            "macos": "0.7.0"
           }
         }
       },
@@ -2581,7 +2798,10 @@
         "group": "Decision",
         "sdk-support": {
           "basic functionality": {
-            "js": "0.41.0"
+            "js": "0.41.0",
+            "android": "6.0.0",
+            "ios": "4.0.0",
+            "macos": "0.7.0"
           }
         }
       },
@@ -2590,7 +2810,10 @@
         "group": "Decision",
         "sdk-support": {
           "basic functionality": {
-            "js": "0.41.0"
+            "js": "0.41.0",
+            "android": "6.0.0",
+            "ios": "4.0.0",
+            "macos": "0.7.0"
           }
         }
       },
@@ -2599,16 +2822,26 @@
         "group": "Decision",
         "sdk-support": {
           "basic functionality": {
-            "js": "0.41.0"
+            "js": "0.41.0",
+            "android": "6.0.0",
+            "ios": "4.0.0",
+            "macos": "0.7.0"
           }
         }
+      },
+      "is-supported-script": {
+        "doc": "Returns `true` if the input string is expected to render legibly. Returns `false` if the input string contains sections that cannot be rendered without potential loss of meaning (e.g. Indic scripts that require complex text shaping, or right-to-left scripts if the the `mapbox-gl-rtl-text` plugin is not in use in Mapbox GL JS).",
+        "group": "String"
       },
       "upcase": {
         "doc": "Returns the input string converted to uppercase. Follows the Unicode Default Case Conversion algorithm and the locale-insensitive case mappings in the Unicode Character Database.",
         "group": "String",
         "sdk-support": {
           "basic functionality": {
-            "js": "0.41.0"
+            "js": "0.41.0",
+            "android": "6.0.0",
+            "ios": "4.0.0",
+            "macos": "0.7.0"
           }
         }
       },
@@ -2617,7 +2850,10 @@
         "group": "String",
         "sdk-support": {
           "basic functionality": {
-            "js": "0.41.0"
+            "js": "0.41.0",
+            "android": "6.0.0",
+            "ios": "4.0.0",
+            "macos": "0.7.0"
           }
         }
       },
@@ -2626,7 +2862,19 @@
         "group": "String",
         "sdk-support": {
           "basic functionality": {
-            "js": "0.41.0"
+            "js": "0.41.0",
+            "android": "6.0.0",
+            "ios": "4.0.0",
+            "macos": "0.7.0"
+          }
+        }
+      },
+      "resolved-locale": {
+        "doc": "Returns the IETF language tag of the locale being used by the provided `collator`. This can be used to determine the default system locale, or to determine if a requested locale was successfully loaded.",
+        "group": "String",
+        "sdk-support": {
+          "basic functionality": {
+            "js": "0.45.0"
           }
         }
       }
@@ -2883,7 +3131,7 @@
       "function": "piecewise-constant",
       "zoom-function": true,
       "transition": true,
-      "doc": "Name of image in sprite to use for drawing image fills. For seamless patterns, image width and height must be a factor of two (2, 4, 8, ..., 512).",
+      "doc": "Name of image in sprite to use for drawing image fills. For seamless patterns, image width and height must be a factor of two (2, 4, 8, ..., 512). Note that zoom-dependent expressions will be evaluated only at integer zoom levels.",
       "sdk-support": {
         "basic functionality": {
           "js": "0.10.0",
@@ -2998,7 +3246,7 @@
       "function": "piecewise-constant",
       "zoom-function": true,
       "transition": true,
-      "doc": "Name of image in sprite to use for drawing images on extruded fills. For seamless patterns, image width and height must be a factor of two (2, 4, 8, ..., 512).",
+      "doc": "Name of image in sprite to use for drawing images on extruded fills. For seamless patterns, image width and height must be a factor of two (2, 4, 8, ..., 512). Note that zoom-dependent expressions will be evaluated only at integer zoom levels.",
       "sdk-support": {
         "basic functionality": {
           "js": "0.27.0",
@@ -3185,7 +3433,10 @@
           "macos": "0.1.0"
         },
         "data-driven styling": {
-          "js": "0.39.0"
+          "js": "0.39.0",
+          "android": "5.2.0",
+          "ios": "3.7.0",
+          "macos": "0.6.0"
         }
       }
     },
@@ -3268,7 +3519,7 @@
       "value": "number",
       "function": "piecewise-constant",
       "zoom-function": true,
-      "doc": "Specifies the lengths of the alternating dashes and gaps that form the dash pattern. The lengths are later scaled by the line width. To convert a dash length to pixels, multiply the length by the current line width.",
+      "doc": "Specifies the lengths of the alternating dashes and gaps that form the dash pattern. The lengths are later scaled by the line width. To convert a dash length to pixels, multiply the length by the current line width. Note that GeoJSON sources with `lineMetrics: true` specified won't render dashed lines to the expected scale. Also note that zoom-dependent expressions will be evaluated only at integer zoom levels.",
       "minimum": 0,
       "transition": true,
       "units": "line widths",
@@ -3292,13 +3543,41 @@
       "function": "piecewise-constant",
       "zoom-function": true,
       "transition": true,
-      "doc": "Name of image in sprite to use for drawing image lines. For seamless patterns, image width must be a factor of two (2, 4, 8, ..., 512).",
+      "doc": "Name of image in sprite to use for drawing image lines. For seamless patterns, image width must be a factor of two (2, 4, 8, ..., 512). Note that zoom-dependent expressions will be evaluated only at integer zoom levels.",
       "sdk-support": {
         "basic functionality": {
           "js": "0.10.0",
           "android": "2.0.1",
           "ios": "2.0.0",
           "macos": "0.1.0"
+        },
+        "data-driven styling": {}
+      }
+    },
+    "line-gradient": {
+      "type": "color",
+      "doc": "Defines a gradient with which to color a line feature. Can only be used with GeoJSON sources that specify `\"lineMetrics\": true`.",
+      "function": "interpolated",
+      "zoom-function": false,
+      "property-function": false,
+      "transition": false,
+      "requires": [
+        {
+          "!": "line-dasharray"
+        },
+        {
+          "!": "line-pattern"
+        },
+        {
+          "source": "geojson",
+          "has": {
+            "lineMetrics": true
+          }
+        }
+      ],
+      "sdk-support": {
+        "basic functionality": {
+          "js": "0.45.0"
         },
         "data-driven styling": {}
       }
@@ -3583,10 +3862,16 @@
       "doc": "Radius of influence of one heatmap point in pixels. Increasing the value makes the heatmap smoother, but less detailed.",
       "sdk-support": {
         "basic functionality": {
-          "js": "0.41.0"
+          "js": "0.41.0",
+          "android": "6.0.0",
+          "ios": "4.0.0",
+          "macos": "0.7.0"
         },
         "data-driven styling": {
-          "js": "0.43.0"
+          "js": "0.43.0",
+          "android": "6.0.0",
+          "ios": "4.0.0",
+          "macos": "0.7.0"
         }
       }
     },
@@ -3601,10 +3886,16 @@
       "doc": "A measure of how much an individual point contributes to the heatmap. A value of 10 would be equivalent to having 10 points of weight 1 in the same spot. Especially useful when combined with clustering.",
       "sdk-support": {
         "basic functionality": {
-          "js": "0.41.0"
+          "js": "0.41.0",
+          "android": "6.0.0",
+          "ios": "4.0.0",
+          "macos": "0.7.0"
         },
         "data-driven styling": {
-          "js": "0.41.0"
+          "js": "0.41.0",
+          "android": "6.0.0",
+          "ios": "4.0.0",
+          "macos": "0.7.0"
         }
       }
     },
@@ -3619,7 +3910,10 @@
       "doc": "Similar to `heatmap-weight` but controls the intensity of the heatmap globally. Primarily used for adjusting the heatmap based on zoom level.",
       "sdk-support": {
         "basic functionality": {
-          "js": "0.41.0"
+          "js": "0.41.0",
+          "android": "6.0.0",
+          "ios": "4.0.0",
+          "macos": "0.7.0"
         },
         "data-driven styling": {}
       }
@@ -3644,7 +3938,10 @@
       "transition": false,
       "sdk-support": {
         "basic functionality": {
-          "js": "0.41.0"
+          "js": "0.41.0",
+          "android": "6.0.0",
+          "ios": "4.0.0",
+          "macos": "0.7.0"
         },
         "data-driven styling": {}
       }
@@ -3661,7 +3958,10 @@
       "transition": true,
       "sdk-support": {
         "basic functionality": {
-          "js": "0.41.0"
+          "js": "0.41.0",
+          "android": "6.0.0",
+          "ios": "4.0.0",
+          "macos": "0.7.0"
         },
         "data-driven styling": {}
       }
@@ -4196,7 +4496,10 @@
         "transition": false,
         "sdk-support": {
           "basic functionality": {
-            "js": "0.43.0"
+            "js": "0.43.0",
+            "android": "6.0.0",
+            "ios": "4.0.0",
+            "macos": "0.7.0"
           },
           "data-driven styling": {}
         }
@@ -4217,7 +4520,10 @@
         "doc": "Direction of light source when map is rotated.",
         "sdk-support": {
           "basic functionality": {
-            "js": "0.43.0"
+            "js": "0.43.0",
+            "android": "6.0.0",
+            "ios": "4.0.0",
+            "macos": "0.7.0"
           },
           "data-driven styling": {}
         }
@@ -4233,7 +4539,10 @@
         "transition": true,
         "sdk-support": {
           "basic functionality": {
-            "js": "0.43.0"
+            "js": "0.43.0",
+            "android": "6.0.0",
+            "ios": "4.0.0",
+            "macos": "0.7.0"
           },
           "data-driven styling": {}
         }
@@ -4247,7 +4556,10 @@
         "transition": true,
         "sdk-support": {
           "basic functionality": {
-            "js": "0.43.0"
+            "js": "0.43.0",
+            "android": "6.0.0",
+            "ios": "4.0.0",
+            "macos": "0.7.0"
           },
           "data-driven styling": {}
         }
@@ -4261,7 +4573,10 @@
         "transition": true,
         "sdk-support": {
           "basic functionality": {
-            "js": "0.43.0"
+            "js": "0.43.0",
+            "android": "6.0.0",
+            "ios": "4.0.0",
+            "macos": "0.7.0"
           },
           "data-driven styling": {}
         }
@@ -4275,7 +4590,10 @@
         "transition": true,
         "sdk-support": {
           "basic functionality": {
-            "js": "0.43.0"
+            "js": "0.43.0",
+            "android": "6.0.0",
+            "ios": "4.0.0",
+            "macos": "0.7.0"
           },
           "data-driven styling": {}
         }
@@ -4310,7 +4628,7 @@
       "function": "piecewise-constant",
       "zoom-function": true,
       "transition": true,
-      "doc": "Name of image in sprite to use for drawing an image background. For seamless patterns, image width and height must be a factor of two (2, 4, 8, ..., 512).",
+      "doc": "Name of image in sprite to use for drawing an image background. For seamless patterns, image width and height must be a factor of two (2, 4, 8, ..., 512). Note that zoom-dependent expressions will be evaluated only at integer zoom levels.",
       "sdk-support": {
         "basic functionality": {
           "js": "0.10.0",

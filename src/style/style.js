@@ -15,12 +15,12 @@ import { getJSON, ResourceType } from '../util/ajax';
 import { isMapboxURL, normalizeStyleURL } from '../util/mapbox';
 import browser from '../util/browser';
 import Dispatcher from '../util/dispatcher';
-import { validateStyle, emitValidationErrors } from './validate_style';
+import { validateStyle, emitValidationErrors as _emitValidationErrors } from './validate_style';
 import {
     getType as getSourceType,
     setType as setSourceType
 } from '../source/source';
-import { queryRenderedFeatures, querySourceFeatures } from '../source/query_features';
+import { queryRenderedFeatures, queryRenderedSymbols, querySourceFeatures } from '../source/query_features';
 import SourceCache from '../source/source_cache';
 import GeoJSONSource from '../source/geojson_source';
 import styleSpec from '../style-spec/reference/latest';
@@ -35,6 +35,12 @@ import PauseablePlacement from './pauseable_placement';
 import ZoomHistory from './zoom_history';
 import CrossTileSymbolIndex from '../symbol/cross_tile_symbol_index';
 
+// We're skipping validation errors with the `source.canvas` identifier in order
+// to continue to allow canvas sources to be added at runtime/updated in
+// smart setStyle (see https://github.com/mapbox/mapbox-gl-js/pull/6424):
+const emitValidationErrors = (evented: Evented, errors: ?$ReadOnlyArray<{message: string, identifier?: string}>) =>
+    _emitValidationErrors(evented, errors && errors.filter(error => error.identifier !== 'source.canvas'));
+
 import type Map from '../ui/map';
 import type Transform from '../geo/transform';
 import type {Source} from '../source/source';
@@ -42,7 +48,7 @@ import type {StyleImage} from './style_image';
 import type {StyleGlyph} from './style_glyph';
 import type {Callback} from '../types/callback';
 import type EvaluationParameters from './evaluation_parameters';
-import type Placement from '../symbol/placement';
+import type { Placement } from '../symbol/placement';
 
 const supportedDiffOperations = pick(diffOperations, [
     'addLayer',
@@ -127,7 +133,7 @@ class Style extends Evented {
 
         const self = this;
         this._rtlTextPluginCallback = Style.registerForPluginAvailability((args) => {
-            self.dispatcher.broadcast('loadRTLTextPlugin', args.pluginURL, args.errorCallback);
+            self.dispatcher.broadcast('loadRTLTextPlugin', args.pluginURL, args.completionCallback);
             for (const id in self.sourceCaches) {
                 self.sourceCaches[id].reload(); // Should be a no-op if the plugin loads before any tiles load
             }
@@ -451,7 +457,7 @@ class Style extends Evented {
             throw new Error(`The type property must be defined, but the only the following properties were given: ${Object.keys(source).join(', ')}.`);
         }
 
-        const builtIns = ['vector', 'raster', 'geojson', 'video', 'image', 'canvas'];
+        const builtIns = ['vector', 'raster', 'geojson', 'video', 'image'];
         const shouldValidate = builtIns.indexOf(source.type) >= 0;
         if (shouldValidate && this._validate(validateStyle.source, `sources.${id}`, source, null, options)) return;
 
@@ -596,6 +602,10 @@ class Style extends Evented {
         const layer = this._layers[id];
         if (!layer) {
             this.fire(new ErrorEvent(new Error(`The layer '${id}' does not exist in the map's style and cannot be moved.`)));
+            return;
+        }
+
+        if (id === before) {
             return;
         }
 
@@ -832,8 +842,27 @@ class Style extends Evented {
         const sourceResults = [];
         for (const id in this.sourceCaches) {
             if (params.layers && !includedSources[id]) continue;
-            const results = queryRenderedFeatures(this.sourceCaches[id], this._layers, queryGeometry, params, transform, this.placement ? this.placement.collisionIndex : null);
-            sourceResults.push(results);
+            sourceResults.push(
+                queryRenderedFeatures(
+                    this.sourceCaches[id],
+                    this._layers,
+                    queryGeometry.worldCoordinate,
+                    params,
+                    transform)
+            );
+        }
+
+        if (this.placement) {
+            // If a placement has run, query against its CollisionIndex
+            // for symbol results, and treat it as an extra source to merge
+            sourceResults.push(
+                queryRenderedSymbols(
+                    this._layers,
+                    queryGeometry.viewport,
+                    params,
+                    this.placement.collisionIndex,
+                    this.placement.retainedQueryData)
+            );
         }
         return this._flattenRenderedFeatures(sourceResults);
     }
@@ -950,7 +979,7 @@ class Style extends Evented {
                     .sort((a, b) => (b.tileID.overscaledZ - a.tileID.overscaledZ) || (a.tileID.isLessThan(b.tileID) ? -1 : 1));
             }
 
-            const layerBucketsChanged = this.crossTileSymbolIndex.addLayer(styleLayer, layerTiles[styleLayer.source]);
+            const layerBucketsChanged = this.crossTileSymbolIndex.addLayer(styleLayer, layerTiles[styleLayer.source], transform.center.lng);
             symbolBucketsChanged = symbolBucketsChanged || layerBucketsChanged;
         }
         this.crossTileSymbolIndex.pruneUnusedLayers(this._order);

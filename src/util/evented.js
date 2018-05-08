@@ -92,6 +92,13 @@ export class Evented {
     }
 
     fire(event: Event) {
+        // Compatibility with (type: string, properties: Object) signature from previous versions.
+        // See https://github.com/mapbox/mapbox-gl-js/issues/6522,
+        //     https://github.com/mapbox/mapbox-gl-draw/issues/766
+        if (typeof event === 'string') {
+            event = new Event(event, arguments[1] || {});
+        }
+
         const type = event.type;
 
         if (this.listens(type)) {
@@ -122,6 +129,8 @@ export class Evented {
         // console if they have no listeners.
         } else if (endsWith(type, 'error')) {
             console.error((event && event.error) || event || 'Empty error event');
+        } else if (endsWith(type, 'warning')) {
+            console.warn((event && event.warning) || event || 'Empty warning event');
         }
 
         return this;

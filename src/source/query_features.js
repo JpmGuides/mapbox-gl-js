@@ -5,13 +5,14 @@ import type StyleLayer from '../style/style_layer';
 import type Coordinate from '../geo/coordinate';
 import type CollisionIndex from '../symbol/collision_index';
 import type Transform from '../geo/transform';
+import type { RetainedQueryData } from '../symbol/placement';
+import assert from 'assert';
 
 export function queryRenderedFeatures(sourceCache: SourceCache,
                             styleLayers: {[string]: StyleLayer},
                             queryGeometry: Array<Coordinate>,
                             params: { filter: FilterSpecification, layers: Array<string> },
-                            transform: Transform,
-                            collisionIndex: ?CollisionIndex) {
+                            transform: Transform) {
     const maxPitchScaleFactor = transform.maxPitchScaleFactor();
     const tilesIn = sourceCache.tilesIn(queryGeometry, maxPitchScaleFactor);
 
@@ -28,13 +29,64 @@ export function queryRenderedFeatures(sourceCache: SourceCache,
                 params,
                 transform,
                 maxPitchScaleFactor,
-                sourceCache.transform.calculatePosMatrix(tileIn.tileID.toUnwrapped()),
-                sourceCache.id,
-                collisionIndex)
+                sourceCache.transform.calculatePosMatrix(tileIn.tileID.toUnwrapped()))
         });
     }
 
     return mergeRenderedFeatureLayers(renderedFeatureLayers);
+}
+
+export function queryRenderedSymbols(styleLayers: {[string]: StyleLayer},
+                            queryGeometry: Array<Point>,
+                            params: { filter: FilterSpecification, layers: Array<string> },
+                            collisionIndex: CollisionIndex,
+                            retainedQueryData: {[number]: RetainedQueryData}) {
+    const result = {};
+    const renderedSymbols = collisionIndex.queryRenderedSymbols(queryGeometry);
+    const bucketQueryData = [];
+    for (const bucketInstanceId of Object.keys(renderedSymbols).map(Number)) {
+        bucketQueryData.push(retainedQueryData[bucketInstanceId]);
+    }
+    bucketQueryData.sort(sortTilesIn);
+
+    for (const queryData of bucketQueryData) {
+        const bucketSymbols = queryData.featureIndex.lookupSymbolFeatures(
+                renderedSymbols[queryData.bucketInstanceId],
+                queryData.bucketIndex,
+                queryData.sourceLayerIndex,
+                params.filter,
+                params.layers,
+                styleLayers);
+
+        for (const layerID in bucketSymbols) {
+            const resultFeatures = result[layerID] = result[layerID] || [];
+            const layerSymbols = bucketSymbols[layerID];
+            layerSymbols.sort((a, b) => {
+                // Match topDownFeatureComparator from FeatureIndex, but using
+                // most recent sorting of features from bucket.sortFeatures
+                const featureSortOrder = queryData.featureSortOrder;
+                if (featureSortOrder) {
+                    // queryRenderedSymbols documentation says we'll return features in
+                    // "top-to-bottom" rendering order (aka last-to-first).
+                    // Actually there can be multiple symbol instances per feature, so
+                    // we sort each feature based on the first matching symbol instance.
+                    const sortedA = featureSortOrder.indexOf(a.featureIndex);
+                    const sortedB = featureSortOrder.indexOf(b.featureIndex);
+                    assert(sortedA >= 0);
+                    assert(sortedB >= 0);
+                    return sortedB - sortedA;
+                } else {
+                    // Bucket hasn't been re-sorted based on angle, so use the
+                    // reverse of the order the features appeared in the data.
+                    return b.featureIndex - a.featureIndex;
+                }
+            });
+            for (const symbolFeature of layerSymbols) {
+                resultFeatures.push(symbolFeature.feature);
+            }
+        }
+    }
+    return result;
 }
 
 export function querySourceFeatures(sourceCache: SourceCache, params: any) {

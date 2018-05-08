@@ -125,12 +125,9 @@ test('SourceCache#addTile', (t) => {
         sourceCache._setTileReloadTimer = (id) => {
             sourceCache._timers[id] = setTimeout(() => {}, 0);
         };
-        sourceCache._setCacheInvalidationTimer = (id) => {
-            sourceCache._cacheTimers[id] = setTimeout(() => {}, 0);
-        };
         sourceCache._loadTile = (tile, callback) => {
             tile.state = 'loaded';
-            tile.getExpiryTimeout = () => time;
+            tile.getExpiryTimeout = () => 1000 * 60;
             sourceCache._setTileReloadTimer(tileID.key, tile);
             callback();
         };
@@ -142,22 +139,22 @@ test('SourceCache#addTile', (t) => {
 
         const id = tileID.key;
         t.notOk(sourceCache._timers[id]);
-        t.notOk(sourceCache._cacheTimers[id]);
+        t.notOk(sourceCache._cache.has(tileID));
 
         sourceCache._addTile(tileID);
 
         t.ok(sourceCache._timers[id]);
-        t.notOk(sourceCache._cacheTimers[id]);
+        t.notOk(sourceCache._cache.has(tileID));
 
         sourceCache._removeTile(tileID.key);
 
         t.notOk(sourceCache._timers[id]);
-        t.ok(sourceCache._cacheTimers[id]);
+        t.ok(sourceCache._cache.has(tileID));
 
         sourceCache._addTile(tileID);
 
         t.ok(sourceCache._timers[id]);
-        t.notOk(sourceCache._cacheTimers[id]);
+        t.notOk(sourceCache._cache.has(tileID));
 
         t.end();
     });
@@ -703,6 +700,32 @@ test('SourceCache#update', (t) => {
                     new OverscaledTileID(16, 0, 16, 8192, 8191).key,
                     new OverscaledTileID(16, 0, 16, 8191, 8191).key
                 ]);
+                t.end();
+            }
+        });
+        sourceCache.onAdd();
+    });
+
+    t.test('reassigns tiles for large jumps in longitude', (t) => {
+
+        const transform = new Transform();
+        transform.resize(511, 511);
+        transform.zoom = 0;
+
+        const sourceCache = createSourceCache({});
+        sourceCache.on('data', (e) => {
+            if (e.sourceDataType === 'metadata') {
+                transform.center = new LngLat(360, 0);
+                const tileID = new OverscaledTileID(0, 1, 0, 0, 0);
+                sourceCache.update(transform);
+                t.deepEqual(sourceCache.getIds(), [tileID.key]);
+                const tile = sourceCache.getTile(tileID);
+
+                transform.center = new LngLat(0, 0);
+                const wrappedTileID = new OverscaledTileID(0, 0, 0, 0, 0);
+                sourceCache.update(transform);
+                t.deepEqual(sourceCache.getIds(), [wrappedTileID.key]);
+                t.equal(sourceCache.getTile(wrappedTileID), tile);
                 t.end();
             }
         });
@@ -1366,7 +1389,7 @@ test('SourceCache#findLoadedParent', (t) => {
         sourceCache.updateCacheSize(tr);
 
         const tile = new Tile(new OverscaledTileID(1, 0, 1, 0, 0), 512, 22);
-        sourceCache._cache.add(tile.tileID.key, tile);
+        sourceCache._cache.add(tile.tileID, tile);
 
         const retain = {};
         const expectedRetain = {};

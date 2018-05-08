@@ -23,6 +23,7 @@ import isSupported from '@mapbox/mapbox-gl-supported';
 import { RGBAImage } from '../util/image';
 import { Event, ErrorEvent } from '../util/evented';
 import { MapMouseEvent } from './events';
+import TaskQueue from '../util/task_queue';
 
 import type {LngLatLike} from '../geo/lng_lat';
 import type {LngLatBoundsLike} from '../geo/lng_lat_bounds';
@@ -37,6 +38,7 @@ import type DragPanHandler from './handler/drag_pan';
 import type KeyboardHandler from './handler/keyboard';
 import type DoubleClickZoomHandler from './handler/dblclick_zoom';
 import type TouchZoomRotateHandler from './handler/touch_zoom_rotate';
+import type {TaskID} from '../util/task_queue';
 
 type ControlPosition = 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right';
 
@@ -147,12 +149,16 @@ const defaultOptions = {
  * where `:owner` is your Mapbox account name and `:style` is the style ID. Or you can use one of the following
  * [the predefined Mapbox styles](https://www.mapbox.com/maps/):
  *
- *  * `mapbox://styles/mapbox/streets-v9`
- *  * `mapbox://styles/mapbox/outdoors-v9`
+ *  * `mapbox://styles/mapbox/streets-v10`
+ *  * `mapbox://styles/mapbox/outdoors-v10`
  *  * `mapbox://styles/mapbox/light-v9`
  *  * `mapbox://styles/mapbox/dark-v9`
  *  * `mapbox://styles/mapbox/satellite-v9`
- *  * `mapbox://styles/mapbox/satellite-streets-v9`
+ *  * `mapbox://styles/mapbox/satellite-streets-v10`
+ *  * `mapbox://styles/mapbox/navigation-preview-day-v2`
+ *  * `mapbox://styles/mapbox/navigation-preview-night-v2`
+ *  * `mapbox://styles/mapbox/navigation-guidance-day-v2`
+ *  * `mapbox://styles/mapbox/navigation-guidance-night-v2`
  *
  * Tilesets hosted with Mapbox can be style-optimized if you append `?optimize=true` to the end of your style URL, like `mapbox://styles/mapbox/streets-v9?optimize=true`.
  * Learn more about style-optimized vector tiles in our [API documentation](https://www.mapbox.com/api-documentation/#retrieve-tiles).
@@ -243,13 +249,43 @@ class Map extends Camera {
     _fadeDuration: number;
     _crossFadingFactor: number;
     _collectResourceTiming: boolean;
+    _renderTaskQueue: TaskQueue;
 
+    /**
+     * The map's {@link ScrollZoomHandler}, which implements zooming in and out with a scroll wheel or trackpad.
+     */
     scrollZoom: ScrollZoomHandler;
+
+    /**
+     * The map's {@link BoxZoomHandler}, which implements zooming using a drag gesture with the Shift key pressed.
+     */
     boxZoom: BoxZoomHandler;
+
+    /**
+     * The map's {@link DragRotateHandler}, which implements rotating the map while dragging with the right
+     * mouse button or with the Control key pressed.
+     */
     dragRotate: DragRotateHandler;
+
+    /**
+     * The map's {@link DragPanHandler}, which implements dragging the map with a mouse or touch gesture.
+     */
     dragPan: DragPanHandler;
+
+    /**
+     * The map's {@link KeyboardHandler}, which allows the user to zoom, rotate, and pan the map using keyboard
+     * shortcuts.
+     */
     keyboard: KeyboardHandler;
+
+    /**
+     * The map's {@link DoubleClickZoomHandler}, which allows the user to zoom by double clicking.
+     */
     doubleClickZoom: DoubleClickZoomHandler;
+
+    /**
+     * The map's {@link TouchZoomRotateHandler}, which allows the user to zoom or rotate the map with touch gestures.
+     */
     touchZoomRotate: TouchZoomRotateHandler;
 
     constructor(options: MapOptions) {
@@ -272,6 +308,7 @@ class Map extends Camera {
         this._fadeDuration = options.fadeDuration;
         this._crossFadingFactor = 1;
         this._collectResourceTiming = options.collectResourceTiming;
+        this._renderTaskQueue = new TaskQueue();
 
         const transformRequestFn = options.transformRequest;
         this._transformRequest = transformRequestFn ?  (url, type) => transformRequestFn(url, type) || ({ url }) : (url) => ({ url });
@@ -389,9 +426,10 @@ class Map extends Camera {
      * This method must be called after the map's `container` is resized by another script,
      * or when the map is shown after being initially hidden with CSS.
      *
+     * @param eventData Additional properties to be added to event objects of events triggered by this method.
      * @returns {Map} `this`
      */
-    resize() {
+    resize(eventData?: Object) {
         const dimensions = this._containerDimensions();
         const width = dimensions[0];
         const height = dimensions[1];
@@ -401,10 +439,10 @@ class Map extends Camera {
         this.painter.resize(width, height);
 
         return this
-            .fire(new Event('movestart'))
-            .fire(new Event('move'))
-            .fire(new Event('resize'))
-            .fire(new Event('moveend'));
+            .fire(new Event('movestart', eventData))
+            .fire(new Event('move', eventData))
+            .fire(new Event('resize', eventData))
+            .fire(new Event('moveend', eventData));
     }
 
     /**
@@ -740,7 +778,7 @@ class Map extends Camera {
 
     /**
      * Returns an array of [GeoJSON](http://geojson.org/)
-     * [Feature objects](http://geojson.org/geojson-spec.html#feature-objects)
+     * [Feature objects](https://tools.ietf.org/html/rfc7946#section-3.2)
      * representing visible features that satisfy the query parameters.
      *
      * @param {PointLike|Array<PointLike>} [geometry] - The geometry of the query region:
@@ -755,7 +793,7 @@ class Map extends Camera {
      *   to limit query results.
      *
      * @returns {Array<Object>} An array of [GeoJSON](http://geojson.org/)
-     * [feature objects](http://geojson.org/geojson-spec.html#feature-objects).
+     * [feature objects](https://tools.ietf.org/html/rfc7946#section-3.2).
      *
      * The `properties` value of each returned feature object contains the properties of its source feature. For GeoJSON sources, only
      * string and numeric property values are supported (i.e. `null`, `Array`, and `Object` values are not supported).
@@ -875,16 +913,17 @@ class Map extends Camera {
             ];
         }
 
-        queryGeometry = queryGeometry.map((p) => {
-            return this.transform.pointCoordinate(p);
-        });
-
-        return queryGeometry;
+        return {
+            viewport: queryGeometry,
+            worldCoordinate: queryGeometry.map((p) => {
+                return this.transform.pointCoordinate(p);
+            })
+        };
     }
 
     /**
      * Returns an array of [GeoJSON](http://geojson.org/)
-     * [Feature objects](http://geojson.org/geojson-spec.html#feature-objects)
+     * [Feature objects](https://tools.ietf.org/html/rfc7946#section-3.2)
      * representing features within the specified vector tile or GeoJSON source that satisfy the query parameters.
      *
      * @param {string} sourceID The ID of the vector tile or GeoJSON source to query.
@@ -895,7 +934,7 @@ class Map extends Camera {
      *   to limit query results.
      *
      * @returns {Array<Object>} An array of [GeoJSON](http://geojson.org/)
-     * [Feature objects](http://geojson.org/geojson-spec.html#feature-objects).
+     * [Feature objects](https://tools.ietf.org/html/rfc7946#section-3.2).
      *
      * In contrast to {@link Map#queryRenderedFeatures}, this function
      * returns all features matching the query parameters,
@@ -998,7 +1037,8 @@ class Map extends Camera {
      *
      * @param {string} id The ID of the source to add. Must not conflict with existing sources.
      * @param {Object} source The source object, conforming to the
-     * Mapbox Style Specification's [source definition](https://www.mapbox.com/mapbox-gl-style-spec/#sources).
+     * Mapbox Style Specification's [source definition](https://www.mapbox.com/mapbox-gl-style-spec/#sources) or
+     * {@link CanvasSourceOptions}.
      * @fires source.add
      * @returns {Map} `this`
      * @see [Draw GeoJSON points](https://www.mapbox.com/mapbox-gl-js/example/geojson-markers/)
@@ -1318,7 +1358,7 @@ class Map extends Camera {
     /**
      * Sets the any combination of light values.
      *
-     * @param light Light properties to set. Must conform to the [Mapbox Style Specification](https://www.mapbox.com/mapbox-gl-style-spec/).
+     * @param light Light properties to set. Must conform to the [Mapbox Style Specification](https://www.mapbox.com/mapbox-gl-style-spec/#light).
      * @returns {Map} `this`
      */
     setLight(light: LightSpecification) {
@@ -1495,6 +1535,21 @@ class Map extends Camera {
     }
 
     /**
+     * Request that the given callback be executed during the next render
+     * frame.  Schedule a render frame if one is not already scheduled.
+     * @returns An id that can be used to cancel the callback
+     * @private
+     */
+    _requestRenderFrame(callback: () => void): TaskID {
+        this._update();
+        return this._renderTaskQueue.add(callback);
+    }
+
+    _cancelRenderFrame(id: TaskID) {
+        this._renderTaskQueue.remove(id);
+    }
+
+    /**
      * Call when a (re-)render of the map is required:
      * - The style has changed (`setPaintProperty()`, etc.)
      * - Source data has changed (e.g. tiles have finished loading)
@@ -1505,7 +1560,7 @@ class Map extends Camera {
      * @private
      */
     _render() {
-        this._updateCamera();
+        this._renderTaskQueue.run();
 
         let crossFading = false;
 
@@ -1589,6 +1644,7 @@ class Map extends Camera {
     remove() {
         if (this._hash) this._hash.remove();
         browser.cancelFrame(this._frameId);
+        this._renderTaskQueue.clear();
         this._frameId = null;
         this.setStyle(null);
         if (typeof window !== 'undefined') {

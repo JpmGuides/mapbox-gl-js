@@ -11,6 +11,9 @@ const types = {
         parameters: ['string', 'string']
     }, {
         type: 'boolean',
+        parameters: ['string', 'string', 'collator']
+    }, {
+        type: 'boolean',
         parameters: ['number', 'number']
     }, {
         type: 'boolean',
@@ -23,6 +26,9 @@ const types = {
         parameters: ['string', 'value']
     }, {
         type: 'boolean',
+        parameters: ['string', 'value', 'collator']
+    }, {
+        type: 'boolean',
         parameters: ['number', 'value']
     }, {
         type: 'boolean',
@@ -33,6 +39,9 @@ const types = {
     }, {
         type: 'boolean',
         parameters: ['value', 'string']
+    }, {
+        type: 'boolean',
+        parameters: ['value', 'string', 'collator']
     }, {
         type: 'boolean',
         parameters: ['value', 'number']
@@ -48,6 +57,9 @@ const types = {
         parameters: ['string', 'string']
     }, {
         type: 'boolean',
+        parameters: ['string', 'string', 'collator']
+    }, {
+        type: 'boolean',
         parameters: ['number', 'number']
     }, {
         type: 'boolean',
@@ -60,6 +72,9 @@ const types = {
         parameters: ['string', 'value']
     }, {
         type: 'boolean',
+        parameters: ['string', 'value', 'collator']
+    }, {
+        type: 'boolean',
         parameters: ['number', 'value']
     }, {
         type: 'boolean',
@@ -70,6 +85,9 @@ const types = {
     }, {
         type: 'boolean',
         parameters: ['value', 'string']
+    }, {
+        type: 'boolean',
+        parameters: ['value', 'string', 'collator']
     }, {
         type: 'boolean',
         parameters: ['value', 'number']
@@ -117,6 +135,13 @@ const types = {
             'N: number (literal)',
             'value'
         ]
+    }],
+    object: [{
+        type: 'object',
+        parameters: ['value']
+    }, {
+        type: 'object',
+        parameters: ['value', { repeat: [ 'fallback: value' ] }]
     }],
     'to-number': [{
         type: 'number',
@@ -183,6 +208,10 @@ const types = {
     var: [{
         type: 'the type of the bound expression',
         parameters: ['previously bound variable name']
+    }],
+    collator: [{
+        type: 'collator',
+        parameters: [ '{ "case-sensitive": boolean, "diacritic-sensitive": boolean, "locale": string }' ]
     }]
 };
 
@@ -208,8 +237,8 @@ for (const name in CompoundExpression.definitions) {
 
 delete types['error'];
 
-const expressions = {};
-const expressionGroups = {};
+export const expressions = {};
+export const expressionGroups = {};
 for (const name in types) {
     const spec = ref['expression_name'].values[name];
     expressionGroups[spec.group] = expressionGroups[spec.group] || [];
@@ -228,5 +257,3 @@ function processParameters(params) {
         return [{repeat: [toString(params.type)]}];
     }
 }
-
-module.exports = {expressions, expressionGroups};

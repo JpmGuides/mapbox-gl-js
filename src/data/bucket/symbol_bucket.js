@@ -17,6 +17,7 @@ import {verticalizedCharacterMap} from '../../util/verticalize_punctuation';
 import Anchor from '../../symbol/anchor';
 import { getSizeData } from '../../symbol/symbol_size';
 import { register } from '../../util/web_worker_transfer';
+import EvaluationParameters from '../../style/evaluation_parameters';
 
 import type {Feature as ExpressionFeature} from '../../style-spec/expression';
 import type {
@@ -47,6 +48,8 @@ export type CollisionArrays = {
     textBox?: SingleCollisionBox;
     iconBox?: SingleCollisionBox;
     textCircles?: Array<number>;
+    textFeatureIndex?: number;
+    iconFeatureIndex?: number;
 };
 
 export type SymbolFeature = {|
@@ -104,8 +107,8 @@ function addVertex(array, anchorX, anchorY, ox, oy, tx, ty, sizeVertex) {
         // a_pos_offset
         anchorX,
         anchorY,
-        Math.round(ox * 64),
-        Math.round(oy * 64),
+        Math.round(ox * 32),
+        Math.round(oy * 32),
 
         // a_data
         tx, // x coordinate of symbol on glyph atlas texture
@@ -277,12 +280,14 @@ class SymbolBucket implements Bucket {
     fadeStartTime: number;
     sortFeaturesByY: boolean;
     sortedAngle: number;
+    featureSortOrder: Array<number>;
 
     text: SymbolBuffers;
     icon: SymbolBuffers;
     collisionBox: CollisionBuffers;
     collisionCircle: CollisionBuffers;
     uploaded: boolean;
+    sourceLayerIndex: number;
 
     constructor(options: BucketParameters<SymbolStyleLayer>) {
         this.collisionBoxArray = options.collisionBoxArray;
@@ -292,6 +297,7 @@ class SymbolBucket implements Bucket {
         this.layerIds = this.layers.map(layer => layer.id);
         this.index = options.index;
         this.pixelRatio = options.pixelRatio;
+        this.sourceLayerIndex = options.sourceLayerIndex;
 
         const layer = this.layers[0];
         const unevaluatedLayoutValues = layer._unevaluatedLayout._values;
@@ -334,7 +340,7 @@ class SymbolBucket implements Bucket {
 
         const icons = options.iconDependencies;
         const stacks = options.glyphDependencies;
-        const globalProperties =  {zoom: this.zoom};
+        const globalProperties = new EvaluationParameters(this.zoom);
 
         for (const {feature, index, sourceLayerIndex} of features) {
             if (!layer._featureFilter(globalProperties, feature)) {
@@ -579,11 +585,12 @@ class SymbolBucket implements Bucket {
             const box: CollisionBox = (collisionBoxArray.get(k): any);
             if (box.radius === 0) {
                 collisionArrays.textBox = { x1: box.x1, y1: box.y1, x2: box.x2, y2: box.y2, anchorPointX: box.anchorPointX, anchorPointY: box.anchorPointY };
-
+                collisionArrays.textFeatureIndex = box.featureIndex;
                 break; // Only one box allowed per instance
             } else {
                 if (!collisionArrays.textCircles) {
                     collisionArrays.textCircles = [];
+                    collisionArrays.textFeatureIndex = box.featureIndex;
                 }
                 const used = 1; // May be updated at collision detection time
                 collisionArrays.textCircles.push(box.anchorPointX, box.anchorPointY, box.radius, box.signedDistanceFromAnchor, used);
@@ -594,6 +601,7 @@ class SymbolBucket implements Bucket {
             const box: CollisionBox = (collisionBoxArray.get(k): any);
             if (box.radius === 0) {
                 collisionArrays.iconBox = { x1: box.x1, y1: box.y1, x2: box.x2, y2: box.y2, anchorPointX: box.anchorPointX, anchorPointY: box.anchorPointY };
+                collisionArrays.iconFeatureIndex = box.featureIndex;
                 break; // Only one box allowed per instance
             }
         }
@@ -650,8 +658,11 @@ class SymbolBucket implements Bucket {
         this.text.indexArray.clear();
         this.icon.indexArray.clear();
 
+        this.featureSortOrder = [];
+
         for (const i of symbolInstanceIndexes) {
             const symbolInstance = this.symbolInstances[i];
+            this.featureSortOrder.push(symbolInstance.featureIndex);
 
             for (const placedTextSymbolIndex of symbolInstance.placedTextSymbolIndices) {
                 const placedSymbol = this.text.placedSymbolArray.get(placedTextSymbolIndex);

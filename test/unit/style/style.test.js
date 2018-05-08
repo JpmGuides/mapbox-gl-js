@@ -1273,6 +1273,23 @@ test('Style#moveLayer', (t) => {
         });
     });
 
+    t.test('moves to existing location', (t) => {
+        const style = new Style(new StubMap());
+        style.loadJSON(createStyleJSON({
+            layers: [
+                {id: 'a', type: 'background'},
+                {id: 'b', type: 'background'},
+                {id: 'c', type: 'background'}
+            ]
+        }));
+
+        style.on('style.load', () => {
+            style.moveLayer('b', 'b');
+            t.deepEqual(style._order, ['a', 'b', 'c']);
+            t.end();
+        });
+    });
+
     t.end();
 });
 
@@ -1910,7 +1927,7 @@ test('Style#query*Features', (t) => {
     });
 
     t.test('queryRenderedFeatures emits an error on incorrect filter', (t) => {
-        t.deepEqual(style.queryRenderedFeatures([10, 100], {filter: 7}, transform), []);
+        t.deepEqual(style.queryRenderedFeatures({ worldCoordinate: [10, 100] }, {filter: 7}, transform), []);
         t.match(onError.args[0][0].error.message, /queryRenderedFeatures\.filter/);
         t.end();
     });
