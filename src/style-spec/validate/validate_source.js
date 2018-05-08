@@ -18,6 +18,7 @@ export default function validateSource(options) {
     let errors = [];
 
     switch (type) {
+    case 'mbtiles':
     case 'vector':
     case 'raster':
     case 'raster-dem':
@@ -77,7 +78,7 @@ export default function validateSource(options) {
         return validateEnum({
             key: `${key}.type`,
             value: value.type,
-            valueSpec: {values: ['vector', 'raster', 'raster-dem', 'geojson', 'video', 'image', 'canvas']},
+            valueSpec: {values: ['mbtiles', 'vector', 'raster', 'raster-dem', 'geojson', 'video', 'image', 'canvas']},
             style: style,
             styleSpec: styleSpec
         });
