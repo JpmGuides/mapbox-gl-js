@@ -111,8 +111,29 @@
     "source_raster_dem",
     "source_geojson",
     "source_video",
-    "source_image"
+    "source_image",
+    "source_mbtiles"
   ],
+  "source_mbtiles": {
+    "type": {
+      "required": true,
+      "type": "enum",
+      "values": {
+        "mbtiles": {
+          "doc": "Local mbtiles db source."
+        }
+      },
+      "doc": "The type of the source."
+    },
+    "attribution": {
+      "type": "string",
+      "doc": "Legal attribution of the source."
+    },
+    "path": {
+      "type": "string",
+      "doc": "Local path to the mbtiles DB."
+    }
+  },
   "source_vector": {
     "type": {
       "required": true,
