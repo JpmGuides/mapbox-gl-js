@@ -2,9 +2,9 @@
 
 require('./stub_loader');
 require('@mapbox/flow-remove-types/register');
-require = require("@std/esm")(module, true);
+require = require("esm")(module, true);
 
-const querySuite = require('./integration').query;
+const querySuite = require('./integration/lib/query');
 const suiteImplementation = require('./suite_implementation');
 const ignores = require('./ignores.json');
 

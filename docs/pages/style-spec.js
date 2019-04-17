@@ -5,6 +5,7 @@ import md from '../components/md';
 import PageShell from '../components/page_shell';
 import LeftNav from '../components/left_nav';
 import TopNav from '../components/top_nav';
+import SDKSupportTable from '../components/sdk_support_table';
 import {highlightJavascript, highlightJSON} from '../components/prism_highlight';
 import entries from 'object.entries';
 import ref from '../../src/style-spec/reference/latest';
@@ -162,6 +163,9 @@ const navigation = [
                 "title": "String"
             },
             {
+                "title": "Formatted"
+            },
+            {
                 "title": "Boolean"
             },
             {
@@ -297,29 +301,20 @@ class Item extends React.Component {
         }
     }
 
-    support(support, sdk) {
-        if (!support) return 'Not yet supported';
-        support = support[sdk];
-        if (support === undefined) return 'Not yet supported';
-        return `>= ${support}`;
-    }
-
     requires(req, i) {
         if (typeof req === 'string') {
             return <span key={i}><em>Requires</em> <var>{req}</var>. </span>;
         } else if (req['!']) {
             return <span key={i}><em>Disabled by</em> <var>{req['!']}</var>. </span>;
-        } else if (req['<=']) {
-            return <span key={i}><em>Must be less than or equal to</em> <var>{req['<=']}</var>. </span>;
         } else {
             const [name, value] = entries(req)[0];
             if (Array.isArray(value)) {
                 return <span key={i}><em>Requires</em> <var>{name}</var> to be {
                     value
-                        .map((r, i) => <var key={i}>{r}</var>)
+                        .map((r, i) => <code key={i}>{JSON.stringify(r)}</code>)
                         .reduce((prev, curr) => [prev, ', or ', curr])}. </span>;
             } else {
-                return <span key={i}><em>Requires</em> <var>{name}</var> to be <var>{value}</var>. </span>;
+                return <span key={i}><em>Requires</em> <var>{name}</var> to be <code>{JSON.stringify(value)}</code>. </span>;
             }
         }
     }
@@ -392,28 +387,7 @@ class Item extends React.Component {
 
                 {this.props['sdk-support'] &&
                 <div className='space-bottom2'>
-                    <table className='micro fixed'>
-                        <thead>
-                            <tr className='fill-light'>
-                                <th>SDK Support</th>
-                                <td className='center'>Mapbox GL JS</td>
-                                <td className='center'>Android SDK</td>
-                                <td className='center'>iOS SDK</td>
-                                <td className='center'>macOS SDK</td>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {entries(this.props['sdk-support']).map(([key, entry], i) =>
-                                <tr key={i}>
-                                    <td>{md(key)}</td>
-                                    <td className='center'>{this.support(entry, 'js')}</td>
-                                    <td className='center'>{this.support(entry, 'android')}</td>
-                                    <td className='center'>{this.support(entry, 'ios')}</td>
-                                    <td className='center'>{this.support(entry, 'macos')}</td>
-                                </tr>
-                            )}
-                        </tbody>
-                    </table>
+                    <SDKSupportTable {...this.props['sdk-support']} />
                 </div>}
             </div>
         );
@@ -469,7 +443,7 @@ export default class extends React.Component {
                                 <li>Advanced designers and cartographers who want to write styles by hand rather
                                     than use <a href='https://www.mapbox.com/studio'>Mapbox Studio</a></li>
                                 <li>Developers using style-related features of <a
-                                    href='https://www.mapbox.com/mapbox-gl-js/'>Mapbox GL JS</a> or the <a
+                                    href='https://docs.mapbox.com/mapbox-gl-js/'>Mapbox GL JS</a> or the <a
                                     href='https://www.mapbox.com/android-sdk/'>Mapbox Maps SDK for Android</a></li>
                                 <li>Authors of software that generates or processes Mapbox styles.</li>
                             </ul>
@@ -604,26 +578,14 @@ export default class extends React.Component {
                                             name !== '*' && name !== 'type' &&
                                             <Item key={i} id={`sources-vector-${name}`} name={name} {...prop}/>)}
                                     </div>
-                                    <table className="micro">
-                                        <thead>
-                                            <tr className='fill-light'>
-                                                <th>SDK Support</th>
-                                                <td className='center'>Mapbox GL JS</td>
-                                                <td className='center'>Android SDK</td>
-                                                <td className='center'>iOS SDK</td>
-                                                <td className='center'>macOS SDK</td>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            <tr>
-                                                <td>basic functionality</td>
-                                                <td className='center'>&gt;= 0.10.0</td>
-                                                <td className='center'>&gt;= 2.0.1</td>
-                                                <td className='center'>&gt;= 2.0.0</td>
-                                                <td className='center'>&gt;= 0.1.0</td>
-                                            </tr>
-                                        </tbody>
-                                    </table>
+                                    <SDKSupportTable {...{
+                                        'basic functionality': {
+                                            js: '0.10.0',
+                                            android: '2.0.1',
+                                            ios: '2.0.0',
+                                            macos: '0.1.0'
+                                        }
+                                    }}/>
                                 </div>
 
                                 <div id='sources-raster' className='pad2 keyline-bottom'>
@@ -645,26 +607,14 @@ export default class extends React.Component {
                                             name !== '*' && name !== 'type' &&
                                             <Item key={i} id={`sources-raster-${name}`} name={name} {...prop}/>)}
                                     </div>
-                                    <table className="micro">
-                                        <thead>
-                                            <tr className='fill-light'>
-                                                <th>SDK Support</th>
-                                                <td className='center'>Mapbox GL JS</td>
-                                                <td className='center'>Android SDK</td>
-                                                <td className='center'>iOS SDK</td>
-                                                <td className='center'>macOS SDK</td>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            <tr>
-                                                <td>basic functionality</td>
-                                                <td className='center'>&gt;= 0.10.0</td>
-                                                <td className='center'>&gt;= 2.0.1</td>
-                                                <td className='center'>&gt;= 2.0.0</td>
-                                                <td className='center'>&gt;= 0.1.0</td>
-                                            </tr>
-                                        </tbody>
-                                    </table>
+                                    <SDKSupportTable {...{
+                                        'basic functionality': {
+                                            js: '0.10.0',
+                                            android: '2.0.1',
+                                            ios: '2.0.0',
+                                            macos: '0.1.0'
+                                        }
+                                    }}/>
                                 </div>
 
                                 <div id='sources-raster-dem' className='pad2 keyline-bottom'>
@@ -684,26 +634,11 @@ export default class extends React.Component {
                                             name !== '*' && name !== 'type' &&
                                             <Item key={i} id={`sources-raster-dem-${name}`} name={name} {...prop}/>)}
                                     </div>
-                                    <table className="micro">
-                                        <thead>
-                                            <tr className='fill-light'>
-                                                <th>SDK Support</th>
-                                                <td className='center'>Mapbox GL JS</td>
-                                                <td className='center'>Android SDK</td>
-                                                <td className='center'>iOS SDK</td>
-                                                <td className='center'>macOS SDK</td>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            <tr>
-                                                <td>basic functionality</td>
-                                                <td>&gt;= 0.43.0</td>
-                                                <td>Not supported</td>
-                                                <td>Not supported</td>
-                                                <td>Not supported</td>
-                                            </tr>
-                                        </tbody>
-                                    </table>
+                                    <SDKSupportTable {...{
+                                        'basic functionality': {
+                                            js: '0.43.0'
+                                        }
+                                    }}/>
                                 </div>
 
                                 <div id='sources-geojson' className='pad2 keyline-bottom'>
@@ -745,33 +680,26 @@ export default class extends React.Component {
                                             name !== '*' && name !== 'type' &&
                                             <Item key={i} id={`sources-geojson-${name}`} name={name} {...prop}/>)}
                                     </div>
-                                    <table className="micro">
-                                        <thead>
-                                            <tr className='fill-light'>
-                                                <th>SDK Requirements</th>
-                                                <td className='center'>Mapbox GL JS</td>
-                                                <td className='center'>Android SDK</td>
-                                                <td className='center'>iOS SDK</td>
-                                                <td className='center'>macOS SDK</td>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            <tr>
-                                                <td>basic functionality</td>
-                                                <td className='center'>&gt;= 0.10.0</td>
-                                                <td className='center'>&gt;= 2.0.1</td>
-                                                <td className='center'>&gt;= 2.0.0</td>
-                                                <td className='center'>&gt;= 0.1.0</td>
-                                            </tr>
-                                            <tr>
-                                                <td>clustering</td>
-                                                <td className='center'>&gt;= 0.14.0</td>
-                                                <td className='center'>&gt;= 4.2.0</td>
-                                                <td className='center'>&gt;= 3.4.0</td>
-                                                <td className='center'>&gt;= 0.3.0</td>
-                                            </tr>
-                                        </tbody>
-                                    </table>
+                                    <SDKSupportTable {...{
+                                        'basic functionality': {
+                                            js: '0.10.0',
+                                            android: '2.0.1',
+                                            ios: '2.0.0',
+                                            macos: '0.1.0'
+                                        },
+                                        'clustering': {
+                                            js: '0.14.0',
+                                            android: '4.2.0',
+                                            ios: '3.4.0',
+                                            macos: '0.3.0'
+                                        },
+                                        'line distance metrics': {
+                                            js: '0.45.0',
+                                            android: '6.5.0',
+                                            ios: '4.4.0',
+                                            macos: '0.11.0'
+                                        }
+                                    }}/>
                                 </div>
 
                                 <div id='sources-image' className='pad2 keyline-bottom'>
@@ -787,7 +715,7 @@ export default class extends React.Component {
                                         {highlightJSON(`
                                             "image": {
                                                 "type": "image",
-                                                "url": "/mapbox-gl-js/assets/radar.gif",
+                                                "url": "https://docs.mapbox.com/mapbox-gl-js/assets/radar.gif",
                                                 "coordinates": [
                                                     [-80.425, 46.437],
                                                     [-71.516, 46.437],
@@ -801,26 +729,14 @@ export default class extends React.Component {
                                             name !== '*' && name !== 'type' &&
                                             <Item key={i} id={`sources-image-${name}`} name={name} {...prop}/>)}
                                     </div>
-                                    <table className="micro">
-                                        <thead>
-                                            <tr className='fill-light'>
-                                                <th>SDK Support</th>
-                                                <td className='center'>Mapbox GL JS</td>
-                                                <td className='center'>Android SDK</td>
-                                                <td className='center'>iOS SDK</td>
-                                                <td className='center'>macOS SDK</td>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            <tr>
-                                                <td>basic functionality</td>
-                                                <td className='center'>&gt;= 0.10.0</td>
-                                                <td className='center'>&gt;= 5.2.0</td>
-                                                <td className='center'>&gt;= 3.7.0</td>
-                                                <td className='center'>&gt;= 0.6.0</td>
-                                            </tr>
-                                        </tbody>
-                                    </table>
+                                    <SDKSupportTable {...{
+                                        'basic functionality': {
+                                            js: '0.10.0',
+                                            android: '5.2.0',
+                                            ios: '3.7.0',
+                                            macos: '0.6.0'
+                                        }
+                                    }}/>
                                 </div>
 
                                 <div id='sources-video' className='pad2 keyline-bottom'>
@@ -839,8 +755,8 @@ export default class extends React.Component {
                                             "video": {
                                                 "type": "video",
                                                 "urls": [
-                                                    "https://www.mapbox.com/drone/video/drone.mp4",
-                                                    "https://www.mapbox.com/drone/video/drone.webm"
+                                                    "https://static-assets.mapbox.com/mapbox-gl-js/drone.mp4",
+                                                    "https://static-assets.mapbox.com/mapbox-gl-js/drone.webm"
                                                 ],
                                                 "coordinates": [
                                                     [-122.51596391201019, 37.56238816766053],
@@ -855,26 +771,11 @@ export default class extends React.Component {
                                             name !== '*' && name !== 'type' &&
                                             <Item key={i} id={`sources-video-${name}`} name={name} {...prop}/>)}
                                     </div>
-                                    <table className="micro">
-                                        <thead>
-                                            <tr className='fill-light'>
-                                                <th>SDK Support</th>
-                                                <td className='center'>Mapbox GL JS</td>
-                                                <td className='center'>Android SDK</td>
-                                                <td className='center'>iOS SDK</td>
-                                                <td className='center'>macOS SDK</td>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            <tr>
-                                                <td>basic functionality</td>
-                                                <td>&gt;= 0.10.0</td>
-                                                <td><a href="https://github.com/mapbox/mapbox-gl-native/issues/601">Not yet supported</a></td>
-                                                <td><a href="https://github.com/mapbox/mapbox-gl-native/issues/601">Not yet supported</a></td>
-                                                <td><a href="https://github.com/mapbox/mapbox-gl-native/issues/601">Not yet supported</a></td>
-                                            </tr>
-                                        </tbody>
-                                    </table>
+                                    <SDKSupportTable {...{
+                                        'basic functionality': {
+                                            js: '0.10.0'
+                                        }
+                                    }}/>
                                 </div>
                             </div>
                         </div>
@@ -885,7 +786,7 @@ export default class extends React.Component {
                             <p>
                                 A style's <code>sprite</code> property supplies a URL template for loading small images to use in
                                 rendering <code>background-pattern</code>, <code>fill-pattern</code>, <code>line-pattern</code>,
-                                and <code>icon-image</code> style properties.
+                                <code>fill-extrusion-pattern</code> and <code>icon-image</code> style properties.
                             </p>
                             <div className='space-bottom1 pad2x clearfix'>
                                 {highlightJSON(`"sprite": ${JSON.stringify(ref.$root.sprite.example, null, 2)}`)}
@@ -969,7 +870,11 @@ export default class extends React.Component {
                             <a id='transition' className='anchor'></a>
                             <h2><a href='#transition' title='link to transition'>Transition</a></h2>
                             <p>
-                                A style's <code>transition</code> property provides global transition defaults for that style.
+                                A <code>transition</code> property controls timing for the interpolation between a transitionable style
+                                property's previous value and new value. A style's <a href='#root-transition' title='link to root-transition'>
+                                root <code>transition</code></a> property provides global transition defaults for that style. Any transitionable
+                                style property may also have its own <code>-transition</code> property that defines specific transition timing
+                                for that specific layer property, overriding the global <code>transition</code> values.
                             </p>
                             <div className='space-bottom1 pad2x clearfix'>
                                 {highlightJSON(`"transition": ${JSON.stringify(ref.$root.transition.example, null, 2)}`)}
@@ -1056,6 +961,19 @@ export default class extends React.Component {
                                 </div>
 
                                 <div className='pad2 keyline-bottom'>
+                                    <a id='types-formatted' className='anchor'/>
+                                    <h3 className='space-bottom1'><a href='#types-formatted' title='link to formatted'>Formatted</a></h3>
+                                    <p>The <code>formatted</code> type represents a string broken into sections annotated with separate formatting options.</p>
+                                    {highlightJSON(`
+                                        {
+                                            "text-field": ["format",
+                                              "foo", { "font-scale": 1.2 },
+                                              "bar", { "font-scale": 0.8 }
+                                            ]
+                                        }`)}
+                                </div>
+
+                                <div className='pad2 keyline-bottom'>
                                     <a id='types-string' className='anchor'/>
                                     <h3 className='space-bottom1'><a href='#types-string' title='link to string'>String</a></h3>
                                     <p>A string is basically just text. In Mapbox styles, you're going to put it in quotes.</p>
@@ -1128,15 +1046,18 @@ export default class extends React.Component {
                             </div>
 
                             <h3>Data expressions</h3>
-                            <p>A <em>data expression</em> is any expression that access feature data -- that is, any
+                            <p>
+                                A <em>data expression</em> is any expression that access feature data -- that is, any
                                 expression that uses one of the data operators:
                                 <a href="#expressions-get"><code>get</code></a>,
                                 <a href="#expressions-has"><code>has</code></a>,
                                 <a href="#expressions-id"><code>id</code></a>,
-                                <a href="#expressions-geometry-type"><code>geometry-type</code></a>, or
-                                <a href="#expressions-properties"><code>properties</code></a>. Data expressions allow a
-                                feature's properties to determine its appearance. They can be used to differentiate
-                                features within the same layer and to create data visualizations.</p>
+                                <a href="#expressions-geometry-type"><code>geometry-type</code></a>,
+                                <a href="#expressions-properties"><code>properties</code></a>, or
+                                <a href="#expressions-feature-state"><code>feature-state</code></a>. Data expressions allow a
+                                feature's properties or state to determine its appearance. They can be used to differentiate
+                                features within the same layer and to create data visualizations.
+                            </p>
 
                             <div className='col12 space-bottom'>
                                 {highlightJSON(`
@@ -1162,7 +1083,9 @@ export default class extends React.Component {
                                 <a href="#layer-filter"><code>filter</code></a> property, and as values for most paint
                                 and layout properties. However, some paint and layout properties do not yet support data
                                 expressions. The level of support is indicated by the "data-driven styling" row of the
-                                "SDK Support" table for each property.</p>
+                                "SDK Support" table for each property. Data expressions with the
+                                <a href="#expressions-feature-state"><code>feature-state</code></a> operator are allowed
+                                only on paint properties.</p>
 
                             <h3>Camera expressions</h3>
                             <p>A <a id="camera-expression" className="anchor"></a><em>camera expression</em> is any
@@ -1228,10 +1151,12 @@ export default class extends React.Component {
                                     ]`)}
                             </div>
 
-                            <p>That is, in layout or paint properties, <code>["zoom"]</code> may appear only as the
-                                input to an outer <a href="#expressions-interpolate"><code>interpolate</code></a> or <a
-                                    href="#expressions-step"><code>step</code></a> expression, or such an expression within
-                                a <a href="#expressions-let"><code>let</code></a> expression.</p>
+                            <p>
+                                That is, in layout or paint properties, <code>["zoom"]</code> may appear only as the
+                                input to an outer <a href="#expressions-interpolate"><code>interpolate</code></a> or
+                                <a href="#expressions-step"><code>step</code></a> expression, or such an expression within
+                                a <a href="#expressions-let"><code>let</code></a> expression.
+                            </p>
 
                             <p>There is an important difference between layout and paint properties in
                                 the timing of camera expression evaluation. Paint property camera expressions are
@@ -1277,18 +1202,20 @@ export default class extends React.Component {
                                 href="#types-number">numbers</a>.
                             </p>
 
-                            <p>When working with feature data, the type of a feature property value is typically not known
+                            <p>
+                                When working with feature data, the type of a feature property value is typically not known
                                 ahead of time by the SDK. In order to preserve type safety, when evaluating a data
                                 expression, the SDK will check that the property value is appropriate for the context.
-                                For example, if you use the expression <code>["get", "feature-color"]</code> for the <a
-                                    href="#paint-circle-circle-color"><code>circle-color</code></a> property, the SDK
+                                For example, if you use the expression <code>["get", "feature-color"]</code> for the
+                                <a href="#paint-circle-circle-color"><code>circle-color</code></a> property, the SDK
                                 will verify that the <code>feature-color</code> value of each feature is a string
                                 identifying a valid <a href="#types-color">color</a>. If this check fails, an error will
                                 be indicated in an SDK-specific way (typically a log message), and the default value for
                                 the property will be used instead.
                             </p>
 
-                            <p>In most cases, this verification will occur automatically wherever it is needed. However,
+                            <p>
+                                In most cases, this verification will occur automatically wherever it is needed. However,
                                 in certain situations, the SDK may be unable to automatically determine the expected
                                 result type of a data expression from surrounding context. For example, it is not clear
                                 whether the expression <code>["&lt;", ["get", "a"], ["get", "b"]]</code> is attempting
@@ -1298,57 +1225,26 @@ export default class extends React.Component {
                                 A type assertion checks that the feature data actually matches the expected type of the
                                 data expression. If this check fails, it produces an error and causes the whole
                                 expression to fall back to the default value for the property being defined. The
-                                assertion operators are <a
-                                    href="#expressions-types-array"><code>array</code></a>, <a
-                                    href="#expressions-types-boolean"><code>boolean</code></a>, <a
-                                    href="#expressions-types-number"><code>number</code></a>, and <a
-                                    href="#expressions-types-string"><code>string</code></a>.
+                                assertion operators are
+                                <a href="#expressions-types-array"><code>array</code></a>,
+                                <a href="#expressions-types-boolean"><code>boolean</code></a>,
+                                <a href="#expressions-types-number"><code>number</code></a>, and
+                                <a href="#expressions-types-string"><code>string</code></a>.
                             </p>
 
-                            <p>Expressions perform only one kind of implicit type conversion: a data expression used in
+                            <p>
+                                Expressions perform only one kind of implicit type conversion: a data expression used in
                                 a context where a <a href="#types-color">color</a> is expected will convert a string
                                 representation of a color to a color value. In all other cases, if you want to convert
-                                between types, you must use one of the <em>type conversion</em> expression operators: <a
-                                    href="#expressions-types-to-boolean"><code>to-boolean</code></a>, <a
-                                    href="#expressions-types-to-number"><code>to-number</code></a>, <a
-                                    href="#expressions-types-to-string"><code>to-string</code></a>, or <a
-                                    href="#expressions-types-to-color"><code>to-color</code></a>. For example, if you
+                                between types, you must use one of the <em>type conversion</em> expression operators:
+                                <a href="#expressions-types-to-boolean"><code>to-boolean</code></a>,
+                                <a href="#expressions-types-to-number"><code>to-number</code></a>,
+                                <a href="#expressions-types-to-string"><code>to-string</code></a>, or
+                                <a href="#expressions-types-to-color"><code>to-color</code></a>. For example, if you
                                 have a feature property that stores numeric values in string format, and you want to use
                                 those values as numbers rather than strings, you can use an expression such
                                 as <code>["to-number", ["get", "property-name"]]</code>.
                             </p>
-
-                            <h3>SDK Support</h3>
-                            <p>Support for expressions was introduced to Mapbox GL JS in version 0.41.0. Support in other SDKs
-                                is forthcoming.</p>
-
-                            <table className="micro space-bottom">
-                                <thead>
-                                    <tr className='fill-light'>
-                                        <th>SDK Support</th>
-                                        <td className='center'>Mapbox GL JS</td>
-                                        <td className='center'>Android SDK</td>
-                                        <td className='center'>iOS SDK</td>
-                                        <td className='center'>macOS SDK</td>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <tr>
-                                        <td>Layout and paint property expressions</td>
-                                        <td className='center'>&gt;= 0.41.0</td>
-                                        <td className='center'>Not yet supported</td>
-                                        <td className='center'>Not yet supported</td>
-                                        <td className='center'>Not yet supported</td>
-                                    </tr>
-                                    <tr>
-                                        <td>Filter expressions</td>
-                                        <td className='center'>&gt;= 0.41.0</td>
-                                        <td className='center'>Not yet supported</td>
-                                        <td className='center'>Not yet supported</td>
-                                        <td className='center'>Not yet supported</td>
-                                    </tr>
-                                </tbody>
-                            </table>
 
                             <h3>Expression reference</h3>
 
@@ -1385,7 +1281,7 @@ export default class extends React.Component {
                                                 expressions.
                                             </p>}
 
-                                        {group.expressions.map(({name, doc, type}, i) =>
+                                        {group.expressions.map(({name, doc, type, sdkSupport}, i) =>
                                             <div key={i} className='col12 clearfix pad0y pad2x space-top0'>
                                                 <span className='space-right'>
                                                     <a className='code'
@@ -1395,6 +1291,7 @@ export default class extends React.Component {
                                                 </span>
                                                 {type.map((overload, i) =>
                                                     <div key={i}>{highlightJavascript(renderSignature(name, overload))}</div>)}
+                                                {sdkSupport && <div className='space-top2 space-bottom2'><SDKSupportTable {...sdkSupport} /></div>}
                                             </div>
                                         )}
                                     </div>
@@ -1451,33 +1348,34 @@ export default class extends React.Component {
                                         <div className="col12 clearfix pad0y pad2x space-bottom2">
                                             <div><span className='code'><a id="function-type"
                                                 href="#function-type">type</a></span></div>
-                                            <div><em className='quiet'>Optional <a href='#types-string'>string</a>. One
-                                                of <code>"identity"</code>, <code>"exponential"</code>, <code>"interval"
-                                                </code>, or <code>"categorical"</code>.</em>
+                                            <div>
+                                                <em className='quiet'>Optional <a href='#types-string'>string</a>. One
+                                                of <code>"identity"</code>, <code>"exponential"</code>,
+                                                <code>"interval"</code>, or <code>"categorical"</code>.</em>
                                             </div>
                                             <dl>
                                                 <dt><code>"identity"</code></dt>
                                                 <dd>A function that returns its input as the output.</dd>
                                                 <dt><code>"exponential"</code></dt>
-                                                <dd>A function that generates an output by interpolating between stops just
+                                                <dd>
+                                                    A function that generates an output by interpolating between stops just
                                                     less than and just greater than the
                                                     function input. The domain (input value) must be numeric, and the
                                                     style property must support
                                                     interpolation. Style properties that support interpolation are
-                                                    marked marked with <span
-                                                        className='icon smooth-ramp quiet micro space-right indivne'
-                                                        title='continuous'/>, the
-                                                    "exponential" symbol, and <var>exponential</var> is the default
+                                                    marked marked with
+                                                    <span className='icon smooth-ramp quiet micro space-right indivne' title='continuous'/>,
+                                                    the "exponential" symbol, and <var>exponential</var> is the default
                                                     function type for these properties.
                                                 </dd>
                                                 <dt><code>"interval"</code></dt>
-                                                <dd>A function that returns the output value of the stop just less than the
+                                                <dd>
+                                                    A function that returns the output value of the stop just less than the
                                                     function input. The domain (input
                                                     value) must be numeric. Any style property may use interval
                                                     functions. For properties marked with
-                                                    <span className='icon step-ramp quiet micro space-right indivne'
-                                                        title='discrete'/>, the "interval"
-                                                    symbol, this is the default function type.
+                                                    <span className='icon step-ramp quiet micro space-right indivne' title='discrete'/>,
+                                                    the "interval" symbol, this is the default function type.
                                                 </dd>
                                                 <dt><code>"categorical"</code></dt>
                                                 <dd>A function that returns the output value of the stop equal to the function
@@ -1537,82 +1435,61 @@ export default class extends React.Component {
                                         </div>
                                     </div>
 
-                                    <table className="micro space-bottom">
-                                        <thead>
-                                            <tr className='fill-light'>
-                                                <th>SDK Support</th>
-                                                <td className='center'>Mapbox GL JS</td>
-                                                <td className='center'>Android SDK</td>
-                                                <td className='center'>iOS SDK</td>
-                                                <td className='center'>macOS SDK</td>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            <tr>
-                                                <td>basic functionality</td>
-                                                <td className='center'>&gt;= 0.10.0</td>
-                                                <td className='center'>&gt;= 2.0.1</td>
-                                                <td className='center'>&gt;= 2.0.0</td>
-                                                <td className='center'>&gt;= 0.1.0</td>
-                                            </tr>
-                                            <tr>
-                                                <td><code>property</code></td>
-                                                <td className='center'>&gt;= 0.18.0</td>
-                                                <td className='center'>&gt;= 5.0.0</td>
-                                                <td className='center'>&gt;= 3.5.0</td>
-                                                <td className='center'>&gt;= 0.4.0</td>
-                                            </tr>
-                                            <tr>
-                                                <td><code>type</code></td>
-                                                <td className='center'>&gt;= 0.18.0</td>
-                                                <td className='center'>&gt;= 5.0.0</td>
-                                                <td className='center'>&gt;= 3.5.0</td>
-                                                <td className='center'>&gt;= 0.4.0</td>
-                                            </tr>
-                                            <tr>
-                                                <td><code>exponential</code> type</td>
-                                                <td className='center'>&gt;= 0.18.0</td>
-                                                <td className='center'>&gt;= 5.0.0</td>
-                                                <td className='center'>&gt;= 3.5.0</td>
-                                                <td className='center'>&gt;= 0.4.0</td>
-                                            </tr>
-                                            <tr>
-                                                <td><code>interval</code> type</td>
-                                                <td className='center'>&gt;= 0.18.0</td>
-                                                <td className='center'>&gt;= 5.0.0</td>
-                                                <td className='center'>&gt;= 3.5.0</td>
-                                                <td className='center'>&gt;= 0.4.0</td>
-                                            </tr>
-                                            <tr>
-                                                <td><code>categorical</code> type</td>
-                                                <td className='center'>&gt;= 0.18.0</td>
-                                                <td className='center'>&gt;= 5.0.0</td>
-                                                <td className='center'>&gt;= 3.5.0</td>
-                                                <td className='center'>&gt;= 0.4.0</td>
-                                            </tr>
-                                            <tr>
-                                                <td><code>identity</code> type</td>
-                                                <td className='center'>&gt;= 0.26.0</td>
-                                                <td className='center'>&gt;= 5.0.0</td>
-                                                <td className='center'>&gt;= 3.5.0</td>
-                                                <td className='center'>&gt;= 0.4.0</td>
-                                            </tr>
-                                            <tr>
-                                                <td><code>default</code></td>
-                                                <td className='center'>&gt;= 0.33.0</td>
-                                                <td className='center'>&gt;= 5.0.0</td>
-                                                <td className='center'>&gt;= 3.5.0</td>
-                                                <td className='center'>&gt;= 0.4.0</td>
-                                            </tr>
-                                            <tr>
-                                                <td><code>colorSpace</code></td>
-                                                <td className='center'>&gt;= 0.26.0</td>
-                                                <td className='center'>Not yet supported</td>
-                                                <td className='center'>Not yet supported</td>
-                                                <td className='center'>Not yet supported</td>
-                                            </tr>
-                                        </tbody>
-                                    </table>
+                                    <div className="space-bottom">
+                                        <SDKSupportTable {...{
+                                            'basic functionality': {
+                                                js: '0.10.0',
+                                                android: '2.0.1',
+                                                ios: '2.0.0',
+                                                macos: '0.1.0'
+                                            },
+                                            '`property`': {
+                                                js: '0.18.0',
+                                                android: '5.0.0',
+                                                ios: '3.5.0',
+                                                macos: '0.4.0'
+                                            },
+                                            '`code`': {
+                                                js: '0.18.0',
+                                                android: '5.0.0',
+                                                ios: '3.5.0',
+                                                macos: '0.4.0'
+                                            },
+                                            '`exponential` type': {
+                                                js: '0.18.0',
+                                                android: '5.0.0',
+                                                ios: '3.5.0',
+                                                macos: '0.4.0'
+                                            },
+                                            '`interval` type': {
+                                                js: '0.18.0',
+                                                android: '5.0.0',
+                                                ios: '3.5.0',
+                                                macos: '0.4.0'
+                                            },
+                                            '`categorical` type': {
+                                                js: '0.18.0',
+                                                android: '5.0.0',
+                                                ios: '3.5.0',
+                                                macos: '0.4.0'
+                                            },
+                                            '`identity` type': {
+                                                js: '0.26.0',
+                                                android: '5.0.0',
+                                                ios: '3.5.0',
+                                                macos: '0.4.0'
+                                            },
+                                            '`default`': {
+                                                js: '0.33.0',
+                                                android: '5.0.0',
+                                                ios: '3.5.0',
+                                                macos: '0.4.0'
+                                            },
+                                            '`colorSpace`': {
+                                                js: '0.26.0'
+                                            }
+                                        }}/>
+                                    </div>
 
                                     <p><strong>Zoom functions</strong> allow the appearance of a map feature to change with map’s zoom level. Zoom functions can be used to create the illusion of depth and control data density. Each stop is an array with two elements: the first is a zoom level and the second is a function output value.</p>
 
@@ -1803,33 +1680,20 @@ export default class extends React.Component {
                                             ]`)}
                                     </div>
 
-                                    <table className="micro">
-                                        <thead>
-                                            <tr className='fill-light'>
-                                                <th>SDK Support</th>
-                                                <td className='center'>Mapbox GL JS</td>
-                                                <td className='center'>Android SDK</td>
-                                                <td className='center'>iOS SDK</td>
-                                                <td className='center'>macOS SDK</td>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            <tr>
-                                                <td>basic functionality</td>
-                                                <td className='center'>&gt;= 0.10.0<br/>deprecated &gt;= 0.41.0</td>
-                                                <td className='center'>&gt;= 2.0.1</td>
-                                                <td className='center'>&gt;= 2.0.0</td>
-                                                <td className='center'>&gt;= 0.1.0</td>
-                                            </tr>
-                                            <tr>
-                                                <td><code>has</code>/<code>!has</code></td>
-                                                <td className='center'>&gt;= 0.19.0</td>
-                                                <td className='center'>&gt;= 4.1.0</td>
-                                                <td className='center'>&gt;= 3.3.0</td>
-                                                <td className='center'>&gt;= 0.1.0</td>
-                                            </tr>
-                                        </tbody>
-                                    </table>
+                                    <SDKSupportTable {...{
+                                        'basic functionality': {
+                                            js: '0.10.0',
+                                            android: '2.0.1',
+                                            ios: '2.0.0',
+                                            macos: '0.1.0'
+                                        },
+                                        '`has` / `!has`': {
+                                            js: '0.19.0',
+                                            android: '4.1.0',
+                                            ios: '3.3.0',
+                                            macos: '0.1.0'
+                                        }
+                                    }}/>
                                 </div>
                             </div>
 

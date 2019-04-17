@@ -6,16 +6,18 @@ import { members as layoutAttributes } from './line_attributes';
 import SegmentVector from '../segment';
 import { ProgramConfigurationSet } from '../program_configuration';
 import { TriangleIndexArray } from '../index_array_type';
-import loadGeometry from '../load_geometry';
 import EXTENT from '../extent';
 import mvt from '@mapbox/vector-tile';
 const vectorTileFeatureTypes = mvt.VectorTileFeature.types;
 import { register } from '../../util/web_worker_transfer';
+import {hasPattern, addPatternDependencies} from './pattern_bucket_features';
+import loadGeometry from '../load_geometry';
 import EvaluationParameters from '../../style/evaluation_parameters';
 
 import type {
     Bucket,
     BucketParameters,
+    BucketFeature,
     IndexedFeature,
     PopulateParameters
 } from '../bucket';
@@ -25,6 +27,8 @@ import type {Segment} from '../segment';
 import type Context from '../../gl/context';
 import type IndexBuffer from '../../gl/index_buffer';
 import type VertexBuffer from '../../gl/vertex_buffer';
+import type {FeatureStates} from '../../source/source_state';
+import type {ImagePosition} from '../../render/image_atlas';
 
 // NOTE ON EXTRUDE SCALE:
 // scale the extrusion vector so that the normal length is this value.
@@ -94,6 +98,9 @@ class LineBucket implements Bucket {
     overscaling: number;
     layers: Array<LineStyleLayer>;
     layerIds: Array<string>;
+    stateDependentLayers: Array<any>;
+    stateDependentLayerIds: Array<string>;
+    features: Array<BucketFeature>;
 
     layoutVertexArray: LineLayoutArray;
     layoutVertexBuffer: VertexBuffer;
@@ -101,6 +108,7 @@ class LineBucket implements Bucket {
     indexArray: TriangleIndexArray;
     indexBuffer: IndexBuffer;
 
+    hasPattern: boolean;
     programConfigurations: ProgramConfigurationSet<LineStyleLayer>;
     segments: SegmentVector;
     uploaded: boolean;
@@ -111,20 +119,58 @@ class LineBucket implements Bucket {
         this.layers = options.layers;
         this.layerIds = this.layers.map(layer => layer.id);
         this.index = options.index;
+        this.features = [];
+        this.hasPattern = false;
 
         this.layoutVertexArray = new LineLayoutArray();
         this.indexArray = new TriangleIndexArray();
         this.programConfigurations = new ProgramConfigurationSet(layoutAttributes, options.layers, options.zoom);
         this.segments = new SegmentVector();
+
+        this.stateDependentLayerIds = this.layers.filter((l) => l.isStateDependent()).map((l) => l.id);
     }
 
     populate(features: Array<IndexedFeature>, options: PopulateParameters) {
+        this.features = [];
+        this.hasPattern = hasPattern('line', this.layers, options);
+
         for (const {feature, index, sourceLayerIndex} of features) {
-            if (this.layers[0]._featureFilter(new EvaluationParameters(this.zoom), feature)) {
-                const geometry = loadGeometry(feature);
-                this.addFeature(feature, geometry);
-                options.featureIndex.insert(feature, geometry, index, sourceLayerIndex, this.index);
+            if (!this.layers[0]._featureFilter(new EvaluationParameters(this.zoom), feature)) continue;
+
+            const geometry = loadGeometry(feature);
+
+            const patternFeature: BucketFeature = {
+                sourceLayerIndex,
+                index,
+                geometry,
+                properties: feature.properties,
+                type: feature.type,
+                patterns: {}
+            };
+
+            if (typeof feature.id !== 'undefined') {
+                patternFeature.id = feature.id;
             }
+
+            if (this.hasPattern) {
+                this.features.push(addPatternDependencies('line', this.layers, patternFeature, this.zoom, options));
+            } else {
+                this.addFeature(patternFeature, geometry, index, {});
+            }
+
+            options.featureIndex.insert(feature, geometry, index, sourceLayerIndex, this.index);
+        }
+    }
+
+    update(states: FeatureStates, vtLayer: VectorTileLayer, imagePositions: {[string]: ImagePosition}) {
+        if (!this.stateDependentLayers.length) return;
+        this.programConfigurations.updatePaintArrays(states, vtLayer, this.stateDependentLayers, imagePositions);
+    }
+
+    addFeatures(options: PopulateParameters, imagePositions: {[string]: ImagePosition}) {
+        for (const feature of this.features) {
+            const {geometry} = feature;
+            this.addFeature(feature, geometry, feature.index, imagePositions);
         }
     }
 
@@ -132,10 +178,17 @@ class LineBucket implements Bucket {
         return this.layoutVertexArray.length === 0;
     }
 
+    uploadPending() {
+        return !this.uploaded || this.programConfigurations.needsUpload;
+    }
+
     upload(context: Context) {
-        this.layoutVertexBuffer = context.createVertexBuffer(this.layoutVertexArray, layoutAttributes);
-        this.indexBuffer = context.createIndexBuffer(this.indexArray);
+        if (!this.uploaded) {
+            this.layoutVertexBuffer = context.createVertexBuffer(this.layoutVertexArray, layoutAttributes);
+            this.indexBuffer = context.createIndexBuffer(this.indexArray);
+        }
         this.programConfigurations.upload(context);
+        this.uploaded = true;
     }
 
     destroy() {
@@ -146,19 +199,19 @@ class LineBucket implements Bucket {
         this.segments.destroy();
     }
 
-    addFeature(feature: VectorTileFeature, geometry: Array<Array<Point>>) {
+    addFeature(feature: BucketFeature, geometry: Array<Array<Point>>, index: number, imagePositions: {[string]: ImagePosition}) {
         const layout = this.layers[0].layout;
-        const join = layout.get('line-join').evaluate(feature);
+        const join = layout.get('line-join').evaluate(feature, {});
         const cap = layout.get('line-cap');
         const miterLimit = layout.get('line-miter-limit');
         const roundLimit = layout.get('line-round-limit');
 
         for (const line of geometry) {
-            this.addLine(line, feature, join, cap, miterLimit, roundLimit);
+            this.addLine(line, feature, join, cap, miterLimit, roundLimit, index, imagePositions);
         }
     }
 
-    addLine(vertices: Array<Point>, feature: VectorTileFeature, join: string, cap: string, miterLimit: number, roundLimit: number) {
+    addLine(vertices: Array<Point>, feature: BucketFeature, join: string, cap: string, miterLimit: number, roundLimit: number, index: number, imagePositions: {[string]: ImagePosition}) {
         let lineDistances = null;
         if (!!feature.properties &&
             feature.properties.hasOwnProperty('mapbox_clip_start') &&
@@ -436,7 +489,7 @@ class LineBucket implements Bucket {
             startOfLine = false;
         }
 
-        this.programConfigurations.populatePaintArrays(this.layoutVertexArray.length, feature);
+        this.programConfigurations.populatePaintArrays(this.layoutVertexArray.length, feature, index, imagePositions);
     }
 
     /**
@@ -573,6 +626,6 @@ function calculateFullDistance(vertices: Array<Point>, first: number, len: numbe
     return total;
 }
 
-register('LineBucket', LineBucket, {omit: ['layers']});
+register('LineBucket', LineBucket, {omit: ['layers', 'features']});
 
 export default LineBucket;

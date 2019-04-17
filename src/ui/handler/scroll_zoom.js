@@ -1,5 +1,6 @@
 // @flow
 
+import assert from 'assert';
 import DOM from '../../util/dom';
 
 import { ease as _ease, bindAll, bezier } from '../../util/util';
@@ -32,6 +33,7 @@ class ScrollZoomHandler {
     _el: HTMLElement;
     _enabled: boolean;
     _active: boolean;
+    _zooming: boolean;
     _aroundCenter: boolean;
     _around: Point;
     _aroundPoint: Point;
@@ -43,11 +45,11 @@ class ScrollZoomHandler {
     _lastWheelEvent: any;
     _lastWheelEventTime: number;
 
-    _startZoom: number;
-    _targetZoom: number;
+    _startZoom: ?number;
+    _targetZoom: ?number;
     _delta: number;
-    _easing: (number) => number;
-    _prevEase: {start: number, duration: number, easing: (number) => number};
+    _easing: ?((number) => number);
+    _prevEase: ?{start: number, duration: number, easing: (number) => number};
 
     _frameId: ?TaskID;
 
@@ -77,10 +79,19 @@ class ScrollZoomHandler {
         return !!this._enabled;
     }
 
+    /*
+    * Active state is turned on and off with every scroll wheel event and is set back to false before the map
+    * render is called, so _active is not a good candidate for determining if a scroll zoom animation is in
+    * progress.
+    */
     isActive() {
         return !!this._active;
     }
 
+
+    isZooming() {
+        return !!this._zooming;
+    }
     /**
      * Enables the "scroll to zoom" interaction.
      *
@@ -181,6 +192,7 @@ class ScrollZoomHandler {
         }
 
         this._active = true;
+        this._zooming = true;
         this._map.fire(new Event('movestart', {originalEvent: e}));
         this._map.fire(new Event('zoomstart', {originalEvent: e}));
         if (this._finishTimeout) {
@@ -228,11 +240,18 @@ class ScrollZoomHandler {
             this._delta = 0;
         }
 
+        const targetZoom = typeof this._targetZoom === 'number' ?
+            this._targetZoom : tr.zoom;
+        const startZoom = this._startZoom;
+        const easing = this._easing;
+
         let finished = false;
-        if (this._type === 'wheel') {
+        if (this._type === 'wheel' && startZoom && easing) {
+            assert(easing && typeof startZoom === 'number');
+
             const t = Math.min((browser.now() - this._lastWheelEventTime) / 200, 1);
-            const k = this._easing(t);
-            tr.zoom = interpolate(this._startZoom, this._targetZoom, k);
+            const k = easing(t);
+            tr.zoom = interpolate(startZoom, targetZoom, k);
             if (t < 1) {
                 if (!this._frameId) {
                     this._frameId = this._map._requestRenderFrame(this._onScrollFrame);
@@ -241,7 +260,7 @@ class ScrollZoomHandler {
                 finished = true;
             }
         } else {
-            tr.zoom = this._targetZoom;
+            tr.zoom = targetZoom;
             finished = true;
         }
 
@@ -253,6 +272,7 @@ class ScrollZoomHandler {
         if (finished) {
             this._active = false;
             this._finishTimeout = setTimeout(() => {
+                this._zooming = false;
                 this._map.fire(new Event('zoomend', {originalEvent: this._lastWheelEvent}));
                 this._map.fire(new Event('moveend', {originalEvent: this._lastWheelEvent}));
                 delete this._targetZoom;
@@ -277,8 +297,8 @@ class ScrollZoomHandler {
 
         this._prevEase = {
             start: browser.now(),
-            duration: duration,
-            easing: easing
+            duration,
+            easing
         };
 
         return easing;

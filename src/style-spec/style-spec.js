@@ -1,52 +1,60 @@
 // @flow
 
+type ExpressionType = 'data-driven' | 'cross-faded' | 'cross-faded-data-driven' | 'color-ramp' | 'data-constant' | 'constant';
+type ExpressionParameters = Array<'zoom' | 'feature' | 'feature-state' | 'heatmap-density' | 'line-progress'>;
+
+type ExpressionSpecification = {
+    interpolated: boolean,
+    parameters: ExpressionParameters
+}
+
 export type StylePropertySpecification = {
     type: 'number',
-    'function': boolean,
-    'property-function': boolean,
-    'zoom-function': boolean,
+    'property-type': ExpressionType,
+    expression?: ExpressionSpecification,
+    transition: boolean,
     default?: number
 } | {
     type: 'string',
-    'function': boolean,
-    'property-function': boolean,
-    'zoom-function': boolean,
+    'property-type': ExpressionType,
+    expression?: ExpressionSpecification,
+    transition: boolean,
     default?: string,
     tokens?: boolean
 } | {
     type: 'boolean',
-    'function': boolean,
-    'property-function': boolean,
-    'zoom-function': boolean,
+    'property-type': ExpressionType,
+    expression?: ExpressionSpecification,
+    transition: boolean,
     default?: boolean
 } | {
     type: 'enum',
-    'function': boolean,
-    'property-function': boolean,
-    'zoom-function': boolean,
+    'property-type': ExpressionType,
+    expression?: ExpressionSpecification,
     values: {[string]: {}},
+    transition: boolean,
     default?: string
 } | {
     type: 'color',
-    'function': boolean,
-    'property-function': boolean,
-    'zoom-function': boolean,
+    'property-type': ExpressionType,
+    expression?: ExpressionSpecification,
+    transition: boolean,
     default?: string
 } | {
     type: 'array',
     value: 'number',
-    'function': boolean,
-    'property-function': boolean,
-    'zoom-function': boolean,
+    'property-type': ExpressionType,
+    expression?: ExpressionSpecification,
     length?: number,
+    transition: boolean,
     default?: Array<number>
 } | {
     type: 'array',
     value: 'string',
-    'function': boolean,
-    'property-function': boolean,
-    'zoom-function': boolean,
+    'property-type': ExpressionType,
+    expression?: ExpressionSpecification,
     length?: number,
+    transition: boolean,
     default?: Array<string>
 };
 
@@ -63,6 +71,7 @@ import featureFilter from './feature_filter';
 import Color from './util/color';
 import { createFunction, isFunction } from './function';
 import convertFunction from './function/convert';
+import { eachSource, eachLayer, eachProperty } from './visit';
 
 import validate from './validate_style';
 
@@ -83,6 +92,8 @@ const styleFunction = {
     isFunction
 };
 
+const visit = { eachSource, eachLayer, eachProperty };
+
 export {
     v8,
     latest,
@@ -96,7 +107,8 @@ export {
     featureFilter,
     Color,
     styleFunction as function,
-    validate
+    validate,
+    visit
 };
 
 validate.parsed = validate;

@@ -5,6 +5,8 @@ import extend from '../util/extend';
 import getType from '../util/get_type';
 import * as interpolate from '../util/interpolate';
 import Interpolate from '../expression/definitions/interpolate';
+import Formatted from '../expression/types/formatted';
+import { supportsInterpolation } from '../util/properties';
 
 export function isFunction(value) {
     return typeof value === 'object' && value !== null && !Array.isArray(value);
@@ -19,7 +21,7 @@ export function createFunction(parameters, propertySpec) {
     const zoomAndFeatureDependent = parameters.stops && typeof parameters.stops[0][0] === 'object';
     const featureDependent = zoomAndFeatureDependent || parameters.property !== undefined;
     const zoomDependent = zoomAndFeatureDependent || !featureDependent;
-    const type = parameters.type || (propertySpec.function === 'interpolated' ? 'exponential' : 'interval');
+    const type = parameters.type || (supportsInterpolation(propertySpec) ? 'exponential' : 'interval');
 
     if (isColor) {
         parameters = extend({}, parameters);
@@ -74,7 +76,7 @@ export function createFunction(parameters, propertySpec) {
             const zoom = stop[0].zoom;
             if (featureFunctions[zoom] === undefined) {
                 featureFunctions[zoom] = {
-                    zoom: zoom,
+                    zoom,
                     type: parameters.type,
                     property: parameters.property,
                     default: parameters.default,
@@ -193,6 +195,8 @@ function evaluateExponentialFunction(parameters, propertySpec, input) {
 function evaluateIdentityFunction(parameters, propertySpec, input) {
     if (propertySpec.type === 'color') {
         input = Color.parse(input);
+    } else if (propertySpec.type === 'formatted') {
+        input = Formatted.fromString(input.toString());
     } else if (getType(input) !== propertySpec.type && (propertySpec.type !== 'enum' || !propertySpec.values[input])) {
         input = undefined;
     }

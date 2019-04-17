@@ -4,12 +4,13 @@ import Map from '../../../../src/ui/map';
 import DOM from '../../../../src/util/dom';
 import simulate from 'mapbox-gl-js-test/simulate_interaction';
 
-function createMap() {
+function createMap(t) {
+    t.stub(Map.prototype, '_detectMissingCSS');
     return new Map({ container: DOM.create('div', '', window.document.body) });
 }
 
 test('TouchZoomRotateHandler fires zoomstart, zoom, and zoomend events at appropriate times in response to a pinch-zoom gesture', (t) => {
-    const map = createMap();
+    const map = createMap(t);
 
     const zoomstart = t.spy();
     const zoom      = t.spy();
@@ -48,7 +49,7 @@ test('TouchZoomRotateHandler fires zoomstart, zoom, and zoomend events at approp
 });
 
 test('TouchZoomRotateHandler fires rotatestart, rotate, and rotateend events at appropriate times in response to a pinch-rotate gesture', (t) => {
-    const map = createMap();
+    const map = createMap(t);
 
     const rotatestart = t.spy();
     const rotate      = t.spy();
@@ -87,7 +88,7 @@ test('TouchZoomRotateHandler fires rotatestart, rotate, and rotateend events at 
 });
 
 test('TouchZoomRotateHandler does not begin a gesture if preventDefault is called on the touchstart event', (t) => {
-    const map = createMap();
+    const map = createMap(t);
 
     map.on('touchstart', e => e.preventDefault());
 
@@ -104,6 +105,46 @@ test('TouchZoomRotateHandler does not begin a gesture if preventDefault is calle
     map._renderTaskQueue.run();
 
     t.equal(move.callCount, 0);
+
+    map.remove();
+    t.end();
+});
+
+test('TouchZoomRotateHandler starts zoom immediately when rotation disabled', (t) => {
+    const map = createMap(t);
+    map.touchZoomRotate.disableRotation();
+
+    const zoomstart = t.spy();
+    const zoom      = t.spy();
+    const zoomend   = t.spy();
+
+    map.on('zoomstart', zoomstart);
+    map.on('zoom',      zoom);
+    map.on('zoomend',   zoomend);
+
+    simulate.touchstart(map.getCanvas(), {touches: [{clientX: 0, clientY: -5}, {clientX: 0, clientY: 5}]});
+    map._renderTaskQueue.run();
+    t.equal(zoomstart.callCount, 0);
+    t.equal(zoom.callCount, 0);
+    t.equal(zoomend.callCount, 0);
+
+    simulate.touchmove(map.getCanvas(), {touches: [{clientX: 0, clientY: -5}, {clientX: 0, clientY: 6}]});
+    map._renderTaskQueue.run();
+    t.equal(zoomstart.callCount, 1);
+    t.equal(zoom.callCount, 1);
+    t.equal(zoomend.callCount, 0);
+
+    simulate.touchmove(map.getCanvas(), {touches: [{clientX: 0, clientY: -5}, {clientX: 0, clientY: 5}]});
+    map._renderTaskQueue.run();
+    t.equal(zoomstart.callCount, 1);
+    t.equal(zoom.callCount, 2);
+    t.equal(zoomend.callCount, 0);
+
+    simulate.touchend(map.getCanvas(), {touches: []});
+    map._renderTaskQueue.run();
+    t.equal(zoomstart.callCount, 1);
+    t.equal(zoom.callCount, 2);
+    t.equal(zoomend.callCount, 1);
 
     map.remove();
     t.end();
