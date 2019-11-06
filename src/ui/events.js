@@ -1,10 +1,10 @@
 // @flow
 
-import { Event } from '../util/evented';
+import {Event} from '../util/evented';
 
 import DOM from '../util/dom';
 import Point from '@mapbox/point-geometry';
-import { extend } from '../util/util';
+import {extend} from '../util/util';
 
 import type Map from './map';
 import type LngLat from '../geo/lng_lat';
@@ -78,7 +78,7 @@ export class MapMouseEvent extends Event {
     constructor(type: string, map: Map, originalEvent: MouseEvent, data: Object = {}) {
         const point = DOM.mousePos(map.getCanvasContainer(), originalEvent);
         const lngLat = map.unproject(point);
-        super(type, extend({ point, lngLat, originalEvent }, data));
+        super(type, extend({point, lngLat, originalEvent}, data));
         this._defaultPrevented = false;
         this.target = map;
     }
@@ -161,11 +161,10 @@ export class MapTouchEvent extends Event {
             return prev.add(curr.div(arr.length));
         }, new Point(0, 0));
         const lngLat = map.unproject(point);
-        super(type, { points, point, lngLats, lngLat, originalEvent });
+        super(type, {points, point, lngLats, lngLat, originalEvent});
         this._defaultPrevented = false;
     }
 }
-
 
 /**
  * `MapWheelEvent` is the event type for the `wheel` map event.
@@ -209,12 +208,15 @@ export class MapWheelEvent extends Event {
      * @private
      */
     constructor(type: string, map: Map, originalEvent: WheelEvent) {
-        super(type, { originalEvent });
+        super(type, {originalEvent});
         this._defaultPrevented = false;
     }
 }
 
 /**
+ * A `MapBoxZoomEvent` is the event type for boxzoom-related map events.
+ * `originalEvent` can be a {@link Map.event:click} when the zoom is triggered by a UI event.
+ *
  * @typedef {Object} MapBoxZoomEvent
  * @property {MouseEvent} originalEvent
  */
@@ -777,6 +779,20 @@ export type MapEvent =
      * @property {MapDataEvent} data
      */
     | 'sourcedataloading'
+
+    /**
+     * Fired when an icon or pattern needed by the style is missing. The missing image can
+     * be added with {@link Map#addImage} within this event listener callback to prevent the image from
+     * being skipped. This event can be used to dynamically generate icons and patterns.
+     *
+     * @event styleimagemissing
+     * @memberof Map
+     * @instance
+     * @property {string} id The id of the missing image.
+     *
+     * @see [Generate and add a missing icon to the map](https://mapbox.com/mapbox-gl-js/example/add-image-missing-generated/)
+     */
+    | 'styleimagemissing'
 
     /**
      * @event style.load

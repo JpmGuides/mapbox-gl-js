@@ -2,7 +2,7 @@
 
 import assert from 'assert';
 
-import { Event, ErrorEvent, Evented } from '../util/evented';
+import {Event, ErrorEvent, Evented} from '../util/evented';
 import StyleLayer from './style_layer';
 import createStyleLayer from './create_style_layer';
 import loadSprite from './load_sprite';
@@ -10,18 +10,18 @@ import ImageManager from '../render/image_manager';
 import GlyphManager from '../render/glyph_manager';
 import Light from './light';
 import LineAtlas from '../render/line_atlas';
-import { pick, clone, extend, deepEqual, filterObject, mapObject } from '../util/util';
-import { getJSON, getReferrer, makeRequest, ResourceType } from '../util/ajax';
-import { isMapboxURL, normalizeStyleURL } from '../util/mapbox';
+import {pick, clone, extend, deepEqual, filterObject, mapObject} from '../util/util';
+import {getJSON, getReferrer, makeRequest, ResourceType} from '../util/ajax';
+import {isMapboxURL} from '../util/mapbox';
 import browser from '../util/browser';
 import Dispatcher from '../util/dispatcher';
-import { validateStyle, emitValidationErrors as _emitValidationErrors } from './validate_style';
+import {validateStyle, emitValidationErrors as _emitValidationErrors} from './validate_style';
 import {
     getType as getSourceType,
     setType as setSourceType,
     type SourceClass
 } from '../source/source';
-import { queryRenderedFeatures, queryRenderedSymbols, querySourceFeatures } from '../source/query_features';
+import {queryRenderedFeatures, queryRenderedSymbols, querySourceFeatures} from '../source/query_features';
 import SourceCache from '../source/source_cache';
 import GeoJSONSource from '../source/geojson_source';
 import styleSpec from '../style-spec/reference/latest';
@@ -61,6 +61,7 @@ import type {
     SourceSpecification
 } from '../style-spec/types';
 import type {CustomLayerInterface} from './style_layer/custom_style_layer';
+import type {Validator} from './validate_style';
 
 const supportedDiffOperations = pick(diffOperations, [
     'addLayer',
@@ -136,7 +137,8 @@ class Style extends Evented {
         this.map = map;
         this.dispatcher = new Dispatcher(getWorkerPool(), this);
         this.imageManager = new ImageManager();
-        this.glyphManager = new GlyphManager(map._transformRequest, options.localIdeographFontFamily);
+        this.imageManager.setEventedParent(this);
+        this.glyphManager = new GlyphManager(map._requestManager, options.localIdeographFontFamily);
         this.lineAtlas = new LineAtlas(256, 512);
         this.crossTileSymbolIndex = new CrossTileSymbolIndex();
 
@@ -191,9 +193,8 @@ class Style extends Evented {
         const validate = typeof options.validate === 'boolean' ?
             options.validate : !isMapboxURL(url);
 
-        url = normalizeStyleURL(url, options.accessToken);
-        const request = this.map._transformRequest(url, ResourceType.Style);
-
+        url = this.map._requestManager.normalizeStyleURL(url, options.accessToken);
+        const request = this.map._requestManager.transformRequest(url, ResourceType.Style);
         this._request = getJSON(request, (error: ?Error, json: ?Object) => {
             this._request = null;
             if (error) {
@@ -226,7 +227,7 @@ class Style extends Evented {
         }
 
         if (json.sprite) {
-            this._spriteRequest = loadSprite(json.sprite, this.map._transformRequest, (err, images) => {
+            this._spriteRequest = loadSprite(json.sprite, this.map._requestManager, (err, images) => {
                 this._spriteRequest = null;
                 if (err) {
                     this.fire(new ErrorEvent(err));
@@ -237,6 +238,7 @@ class Style extends Evented {
                 }
 
                 this.imageManager.setLoaded(true);
+                this.dispatcher.broadcast('setImages', this.imageManager.listImages());
                 this.fire(new Event('data', {dataType: 'style'}));
             });
         } else {
@@ -255,7 +257,6 @@ class Style extends Evented {
             layer.setEventedParent(this, {layer: {id: layer.id}});
             this._layers[layer.id] = layer;
         }
-
         this.dispatcher.broadcast('setLayers', this._serializeLayers(this._order));
 
         this.light = new Light(this.stylesheet.light);
@@ -381,7 +382,7 @@ class Style extends Evented {
         for (const layerId of this._order) {
             const layer = this._layers[layerId];
 
-            layer.recalculate(parameters);
+            layer.recalculate(parameters, this.imageManager.listImages());
             if (!layer.isHidden(parameters.zoom) && layer.source) {
                 this.sourceCaches[layer.source].used = true;
             }
@@ -463,6 +464,10 @@ class Style extends Evented {
         }
         this.imageManager.addImage(id, image);
         this.fire(new Event('data', {dataType: 'style'}));
+    }
+
+    updateImage(id: string, image: StyleImage) {
+        this.imageManager.updateImage(id, image);
     }
 
     getImage(id: string): ?StyleImage {
@@ -873,12 +878,12 @@ class Style extends Evented {
             return;
         }
 
-        if (target.id && isNaN(featureId) || featureId < 0) {
+        if (target.id !== undefined && isNaN(featureId) || featureId < 0) {
             this.fire(new ErrorEvent(new Error(`The feature id parameter must be non-negative.`)));
             return;
         }
 
-        if (key && !target.id) {
+        if (key && (typeof target.id !== 'string' && typeof target.id !== 'number')) {
             this.fire(new ErrorEvent(new Error(`A feature id is requred to remove its specific state property.`)));
             return;
         }
@@ -911,7 +916,7 @@ class Style extends Evented {
     }
 
     getTransition() {
-        return extend({ duration: 300, delay: 0 }, this.stylesheet && this.stylesheet.transition);
+        return extend({duration: 300, delay: 0}, this.stylesheet && this.stylesheet.transition);
     }
 
     serialize() {
@@ -1011,7 +1016,7 @@ class Style extends Evented {
 
     queryRenderedFeatures(queryGeometry: any, params: any, transform: Transform) {
         if (params && params.filter) {
-            this._validate(validateStyle.filter, 'queryRenderedFeatures.filter', params.filter);
+            this._validate(validateStyle.filter, 'queryRenderedFeatures.filter', params.filter, null, params);
         }
 
         const includedSources = {};
@@ -1062,9 +1067,9 @@ class Style extends Evented {
         return this._flattenAndSortRenderedFeatures(sourceResults);
     }
 
-    querySourceFeatures(sourceID: string, params: ?{sourceLayer: ?string, filter: ?Array<any>}) {
+    querySourceFeatures(sourceID: string, params: ?{sourceLayer: ?string, filter: ?Array<any>, validate?: boolean}) {
         if (params && params.filter) {
-            this._validate(validateStyle.filter, 'querySourceFeatures.filter', params.filter);
+            this._validate(validateStyle.filter, 'querySourceFeatures.filter', params.filter, null, params);
         }
         const sourceCache = this.sourceCaches[sourceID];
         return sourceCache ? querySourceFeatures(sourceCache, params) : [];
@@ -1116,7 +1121,7 @@ class Style extends Evented {
         this.light.updateTransitions(parameters);
     }
 
-    _validate(validate: ({}) => void, key: string, value: any, props: any, options: StyleSetterOptions = {}) {
+    _validate(validate: Validator, key: string, value: any, props: any, options: { validate?: boolean } = {}) {
         if (options && options.validate === false) {
             return false;
         }
@@ -1138,9 +1143,16 @@ class Style extends Evented {
             this._spriteRequest = null;
         }
         rtlTextPluginEvented.off('pluginAvailable', this._rtlTextPluginCallback);
+        for (const layerId in this._layers) {
+            const layer: StyleLayer = this._layers[layerId];
+            layer.setEventedParent(null);
+        }
         for (const id in this.sourceCaches) {
             this.sourceCaches[id].clearTiles();
+            this.sourceCaches[id].setEventedParent(null);
         }
+        this.imageManager.setEventedParent(null);
+        this.setEventedParent(null);
         this.dispatcher.remove();
     }
 
@@ -1195,8 +1207,8 @@ class Style extends Evented {
         // tiles will fully display symbols in their first frame
         const forceFullPlacement = this._layerOrderChanged || fadeDuration === 0;
 
-        if (forceFullPlacement || !this.pauseablePlacement || (this.pauseablePlacement.isDone() && !this.placement.stillRecent(browser.now()))) {
-            this.pauseablePlacement = new PauseablePlacement(transform, this._order, forceFullPlacement, showCollisionBoxes, fadeDuration, crossSourceCollisions);
+        if (forceFullPlacement || !this.pauseablePlacement || (this.pauseablePlacement.isDone() && !this.placement.stillRecent(browser.now(), transform.zoom))) {
+            this.pauseablePlacement = new PauseablePlacement(transform, this._order, forceFullPlacement, showCollisionBoxes, fadeDuration, crossSourceCollisions, this.placement);
             this._layerOrderChanged = false;
         }
 
@@ -1210,7 +1222,7 @@ class Style extends Evented {
             this.pauseablePlacement.continuePlacement(this._order, this._layers, layerTiles);
 
             if (this.pauseablePlacement.isDone()) {
-                this.placement = this.pauseablePlacement.commit(this.placement, browser.now());
+                this.placement = this.pauseablePlacement.commit(browser.now());
                 placementCommitted = true;
             }
 

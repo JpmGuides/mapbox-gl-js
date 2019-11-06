@@ -1,3 +1,44 @@
+## 13.9.1
+
+### ✨ Improvement
+* Rename `Image` type to `ResolvedImage`, to better represent the result of an `image` expression evaluation. ([#8901](https://github.com/mapbox/mapbox-gl-js/pull/8901))
+
+## 13.9.0
+
+* Add `image` expression operator to determine image availability ([#8684](https://github.com/mapbox/mapbox-gl-js/pull/8684))
+* Add a style-spec function to validate that styles are compatible with the Mapbox API ([#8663](https://github.com/mapbox/mapbox-gl-js/pull/8663))
+
+## 13.8.0
+
+- Introduce `text-writing-mode` symbol layer property to allow placing point labels vertically. [#8399](https://github.com/mapbox/mapbox-gl-js/pull/8399)
+- Allow `text-color` to be used in formatted expressions to be able to draw different parts of a label in different colors. [#8068](https://github.com/mapbox/mapbox-gl-js/pull/8068)
+- Improve conversion of legacy filters with duplicate values. [#8542](https://github.com/mapbox/mapbox-gl-js/pull/8542)
+
+## 13.7.2
+
+### 🐛 Bug fixes
+* Fix SDK support spec section for variable label placement ([#8384](https://github.com/mapbox/mapbox-gl-js/pull/8384)) (h/t [@pozdnyakov](https://github.com/pozdnyakov))
+
+### ✨ Features and improvements
+* Add SDK support spec section for text-radial-offset  ([#8401](https://github.com/mapbox/mapbox-gl-js/pull/8401))
+* Add `*-sort-key` layout property for circle, fill, line ([#8467](https://github.com/mapbox/mapbox-gl-js/pull/8467))
+* Expose convertFilter API in the style specification ([#8493](https://github.com/mapbox/mapbox-gl-js/pull/8493))
+
+## 13.7.1
+
+### 🐛 Bug fixes
+* Fix format expression options validation ([#8339](https://github.com/mapbox/mapbox-gl-js/pull/8339))
+* Fix SDK support information for style properties added in v13.7.0: ([#8384](https://github.com/mapbox/mapbox-gl-js/pull/8384))
+    * Add missing SDK support section for `text-radial-offset` property
+    * Assign SDK versions for `text-variable-anchor` and `text-justify: auto`
+
+## 13.7.0
+
+### ✨ Features and improvements
+* Add `text-radial-offset` style property ([#7596](https://github.com/mapbox/mapbox-gl-js/pull/7596))
+* Add `text-variable-anchor` style property ([#7596](https://github.com/mapbox/mapbox-gl-js/pull/7596))
+* Add `auto` value to `text-justify` style property ([#7596](https://github.com/mapbox/mapbox-gl-js/pull/7596))
+
 ## 13.6.0
 
 ### ✨ Features and improvements

@@ -1,7 +1,7 @@
 // @flow
 
 import DOM from '../../util/dom';
-import { bindAll } from '../../util/util';
+import {bindAll} from '../../util/util';
 import config from '../../util/config';
 
 import type Map from '../map';
@@ -30,6 +30,7 @@ class AttributionControl {
     _container: HTMLElement;
     _innerContainer: HTMLElement;
     _editLink: ?HTMLAnchorElement;
+    _attribHTML: string;
     styleId: string;
     styleOwner: string;
 
@@ -93,7 +94,7 @@ class AttributionControl {
         const params = [
             {key: "owner", value: this.styleOwner},
             {key: "id", value: this.styleId},
-            {key: "access_token", value: config.ACCESS_TOKEN}
+            {key: "access_token", value: this._map._requestManager._customAccessToken || config.ACCESS_TOKEN}
         ];
 
         if (editLink) {
@@ -104,6 +105,7 @@ class AttributionControl {
                 return acc;
             }, `?`);
             editLink.href = `${config.FEEDBACK_URL}/${paramString}${this._map._hash ? this._map._hash.getHashString(true) : ''}`;
+            editLink.rel = "noopener nofollow";
         }
     }
 
@@ -156,8 +158,15 @@ class AttributionControl {
             }
             return true;
         });
+
+        // check if attribution string is different to minimize DOM changes
+        const attribHTML = attributions.join(' | ');
+        if (attribHTML === this._attribHTML) return;
+
+        this._attribHTML = attribHTML;
+
         if (attributions.length) {
-            this._innerContainer.innerHTML = attributions.join(' | ');
+            this._innerContainer.innerHTML = attribHTML;
             this._container.classList.remove('mapboxgl-attrib-empty');
         } else {
             this._container.classList.add('mapboxgl-attrib-empty');

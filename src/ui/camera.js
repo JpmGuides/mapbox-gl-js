@@ -7,14 +7,15 @@ import {
     warnOnce,
     clamp,
     wrap,
-    ease as defaultEasing
+    ease as defaultEasing,
+    pick
 } from '../util/util';
-import { number as interpolate } from '../style-spec/util/interpolate';
+import {number as interpolate} from '../style-spec/util/interpolate';
 import browser from '../util/browser';
 import LngLat from '../geo/lng_lat';
 import LngLatBounds from '../geo/lng_lat_bounds';
 import Point from '@mapbox/point-geometry';
-import { Event, Evented } from '../util/evented';
+import {Event, Evented} from '../util/evented';
 
 import type Transform from '../geo/transform';
 import type {LngLatLike} from '../geo/lng_lat';
@@ -108,7 +109,7 @@ class Camera extends Evented {
      * @memberof Map#
      * @returns The map's geographical centerpoint.
      */
-    getCenter(): LngLat { return this.transform.center; }
+    getCenter(): LngLat { return new LngLat(this.transform.center.lng, this.transform.center.lat); }
 
     /**
      * Sets the map's geographical centerpoint. Equivalent to `jumpTo({center: center})`.
@@ -314,6 +315,25 @@ class Camera extends Evented {
     }
 
     /**
+     * Rotates and pitches the map so that north is up (0° bearing) and pitch is 0°, with an animated transition.
+     *
+     * @memberof Map#
+     * @param options
+     * @param eventData Additional properties to be added to event objects of events triggered by this method.
+     * @fires movestart
+     * @fires moveend
+     * @returns {Map} `this`
+     */
+    resetNorthPitch(options?: AnimationOptions, eventData?: Object) {
+        this.easeTo(extend({
+            bearing: 0,
+            pitch: 0,
+            duration: 1000
+        }, options), eventData);
+        return this;
+    }
+
+    /**
      * Snaps the map so that north is up (0° bearing), if the current bearing is close enough to it (i.e. within the
      * `bearingSnap` threshold).
      *
@@ -365,8 +385,7 @@ class Camera extends Evented {
      * @param {PointLike} [options.offset=[0, 0]] The center of the given bounds relative to the map's center, measured in pixels.
      * @param {number} [options.maxZoom] The maximum zoom level to allow when the camera would transition to the specified bounds.
      * @returns {CameraOptions | void} If map is able to fit to provided bounds, returns `CameraOptions` with
-     *      at least `center`, `zoom`, `bearing`, `offset`, `padding`, and `maxZoom`, as well as any other
-     *      `options` provided in arguments. If map is unable to fit, method will warn and return undefined.
+     *      `center`, `zoom`, and `bearing`. If map is unable to fit, method will warn and return undefined.
      * @example
      * var bbox = [[-79, 43], [-73, 45]];
      * var newCameraTransform = map.cameraForBounds(bbox, {
@@ -391,8 +410,7 @@ class Camera extends Evented {
      * @param {PointLike} [options.offset=[0, 0]] The center of the given bounds relative to the map's center, measured in pixels.
      * @param {number} [options.maxZoom] The maximum zoom level to allow when the camera would transition to the specified bounds.
      * @returns {CameraOptions | void} If map is able to fit to provided bounds, returns `CameraOptions` with
-     *      at least `center`, `zoom`, `bearing`, `offset`, `padding`, and `maxZoom`, as well as any other
-     *      `options` provided in arguments. If map is unable to fit, method will warn and return undefined.
+     *      `center`, `zoom`, and `bearing`. If map is unable to fit, method will warn and return undefined.
      * @private
      * @example
      * var p0 = [-79, 43];
@@ -636,6 +654,9 @@ class Camera extends Evented {
      * between old and new values. The map will retain its current values for any
      * details not specified in `options`.
      *
+     * Note: The transition will happen instantly if the user has enabled
+     * the `reduced motion` accesibility feature enabled in their operating system.
+     *
      * @memberof Map#
      * @param options Options describing the destination and animation of the transition.
      *            Accepts {@link CameraOptions} and {@link AnimationOptions}.
@@ -662,7 +683,7 @@ class Camera extends Evented {
             easing: defaultEasing
         }, options);
 
-        if (options.animate === false) options.duration = 0;
+        if (options.animate === false || browser.prefersReducedMotion) options.duration = 0;
 
         const tr = this.transform,
             startZoom = this.getZoom(),
@@ -789,6 +810,9 @@ class Camera extends Evented {
      * evokes flight. The animation seamlessly incorporates zooming and panning to help
      * the user maintain her bearings even after traversing a great distance.
      *
+     * Note: The animation will be skipped, and this will behave equivalently to `jumpTo`
+     * if the user has the `reduced motion` accesibility feature enabled in their operating system.
+     *
      * @memberof Map#
      * @param {Object} options Options describing the destination and animation of the transition.
      *     Accepts {@link CameraOptions}, {@link AnimationOptions},
@@ -840,6 +864,12 @@ class Camera extends Evented {
      * @see [Fly to a location based on scroll position](https://www.mapbox.com/mapbox-gl-js/example/scroll-fly-to/)
      */
     flyTo(options: Object, eventData?: Object) {
+        // Fall through to jumpTo if user has set prefers-reduced-motion
+        if (browser.prefersReducedMotion) {
+            const coercedOptions = (pick(options, ['center', 'zoom', 'bearing', 'pitch', 'around']): CameraOptions);
+            return this.jumpTo(coercedOptions, eventData);
+        }
+
         // This method implements an “optimal path” animation, as detailed in:
         //
         // Van Wijk, Jarke J.; Nuij, Wim A. A. “Smooth and efficient zooming and panning.” INFOVIS
